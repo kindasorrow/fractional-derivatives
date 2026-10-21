@@ -1,0 +1,51 @@
+{
+  "passed": true,
+  "shape_u0": [
+    1200,
+    128
+  ],
+  "shape_alpha": [
+    1200
+  ],
+  "shape_uT": [
+    1200,
+    128
+  ],
+  "dtype": "float64",
+  "split_counts": {
+    "test_alpha_035": 50,
+    "test_alpha_075": 50,
+    "test_random": 100,
+    "train": 1000
+  },
+  "held_out_alphas_absent_from_train": true,
+  "unique_initial_conditions": 1200,
+  "zero_boundaries": true,
+  "all_finite": true,
+  "checked_indices": [
+    0,
+    499,
+    999,
+    1000,
+    1099,
+    1100,
+    1149,
+    1150,
+    1199
+  ],
+  "maximum_batch_vs_tridiagonal_error": 7.077671781985373e-16,
+  "checked_multimode_final_relative_l2_errors": [
+    0.0008442212694775256,
+    0.0004199629001698025,
+    0.0006923140154963348,
+    0.00032605487273589244,
+    0.001162080485843635,
+    0.00038866555452885974,
+    0.00038329743918996093,
+    0.0009438581780168998,
+    0.0009440939859423664
+  ],
+  "size_bytes": 2399374,
+  "generation_seconds": 18.30292902399924,
+  "sha256": "fc0cf65e71905ad07817d52b8618988425cd852f667c8f8ca8ddc03e9ea4aedf"
+}
