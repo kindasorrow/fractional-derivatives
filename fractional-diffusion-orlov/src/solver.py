@@ -5,6 +5,7 @@ All public solution arrays include the initial time and both boundaries.
 """
 from dataclasses import dataclass
 import numpy as np
+from scipy.fft import dst
 from scipy.linalg.lapack import dpttrf, dpttrs
 from scipy.special import gamma
 
@@ -59,10 +60,11 @@ def solve_l1(u0, alpha, n_steps=500, T=1.0):
     dx = 1 / (n_x - 1)
     c = gamma(2 - alpha) * (T / n_steps)**alpha
     r = c / dx**2
-    diag, off, info = dpttrf(np.full(n_x - 2, 1 + 2*r),
-                            np.full(n_x - 3, -r))
-    if info != 0:
-        raise RuntimeError(f'tridiagonal factorization failed: {info}')
+    if n_x > 3:
+        diag, off, info = dpttrf(np.full(n_x - 2, 1 + 2*r),
+                                np.full(n_x - 3, -r))
+        if info != 0:
+            raise RuntimeError(f'tridiagonal factorization failed: {info}')
     u = np.zeros((n_steps + 1, n_x), dtype=np.float64)
     u[0, 1:-1] = u0[1:-1]
     delta = np.empty((n_steps, n_x - 2), dtype=np.float64)
@@ -70,10 +72,13 @@ def solve_l1(u0, alpha, n_steps=500, T=1.0):
         rhs = u[n-1, 1:-1].copy()
         if n > 1:
             rhs -= np.einsum('j,jk->k', b[n-1:0:-1], delta[:n-1], optimize=False)
-        value, info = dpttrs(diag, off, rhs[:, None])
-        if info != 0:
-            raise RuntimeError(f'tridiagonal solve failed: {info}')
-        u[n, 1:-1] = value[:, 0]
+        if n_x == 3:
+            u[n, 1:-1] = rhs / (1 + 2*r)
+        else:
+            value, info = dpttrs(diag, off, rhs[:, None])
+            if info != 0:
+                raise RuntimeError(f'tridiagonal solve failed: {info}')
+            u[n, 1:-1] = value[:, 0]
         delta[n-1] = u[n, 1:-1] - u[n-1, 1:-1]
     return Solution(np.linspace(0, 1, n_x), np.linspace(0, T, n_steps+1), u)
 
@@ -87,7 +92,8 @@ def sine_basis(n_x=128, n_modes=8):
     return basis
 
 
-def solve_l1_sine_batch(coefficients, alpha, n_x=128, n_steps=500, T=1.0):
+def solve_l1_sine_batch(coefficients, alpha, n_x=128, n_steps=500, T=1.0,
+                        sample_steps=None):
     """Return final states for finite sine sums, using the SAME FD/L1 scheme.
 
     Uses discrete eigenvalues 4/dx^2 sin^2(k*pi/(2*(n_x-1))),
@@ -101,6 +107,13 @@ def solve_l1_sine_batch(coefficients, alpha, n_x=128, n_steps=500, T=1.0):
         raise ValueError('coefficients must be [batch,modes], alpha [batch]')
     if not np.all(np.isfinite(coef)):
         raise ValueError('coefficients must be finite')
+    if sample_steps is not None:
+        sample_steps = np.asarray(sample_steps)
+        if (sample_steps.ndim != 1 or sample_steps.size == 0
+                or not np.issubdtype(sample_steps.dtype, np.integer)
+                or np.any(sample_steps < 0) or np.any(sample_steps > n_steps)
+                or np.any(sample_steps[1:] <= sample_steps[:-1])):
+            raise ValueError('sample_steps must be increasing integers between 0 and n_steps')
     basis = sine_basis(n_x, coef.shape[1])
     b = l1_weights(a, n_steps)
     k = np.arange(1, coef.shape[1]+1)
@@ -108,6 +121,13 @@ def solve_l1_sine_batch(coefficients, alpha, n_x=128, n_steps=500, T=1.0):
     c = gamma(2-a) * (T/n_steps)**a
     denominator = 1 + c[:, None] * lam
     previous = coef.copy()
+    snapshots = None
+    sample_index = 0
+    if sample_steps is not None:
+        snapshots = np.empty((len(coef), len(sample_steps), n_x), dtype=np.float64)
+        if sample_steps[0] == 0:
+            snapshots[:, 0] = previous @ basis
+            sample_index = 1
     delta = np.empty((n_steps,) + coef.shape, dtype=np.float64)
     for n in range(1, n_steps+1):
         rhs = previous.copy()
@@ -116,6 +136,27 @@ def solve_l1_sine_batch(coefficients, alpha, n_x=128, n_steps=500, T=1.0):
         current = rhs / denominator
         delta[n-1] = current - previous
         previous = current
+        if (snapshots is not None and sample_index < len(sample_steps)
+                and n == sample_steps[sample_index]):
+            snapshots[:, sample_index] = previous @ basis
+            sample_index += 1
+    if snapshots is not None:
+        snapshots[:, :, [0, -1]] = 0
+        return snapshots
     final = previous @ basis
     final[:, [0, -1]] = 0
     return final
+
+
+def solve_l1_batch(u0, alpha, n_steps=500, T=1.0, sample_steps=None):
+    initial = np.asarray(u0, dtype=np.float64)
+    if initial.ndim != 2:
+        raise ValueError('u0 must be [batch,n_x]')
+    _check_grid(initial.shape[1], n_steps, T)
+    if not np.all(np.isfinite(initial)):
+        raise ValueError('u0 must be finite')
+    if not np.allclose(initial[:, [0, -1]], 0, rtol=0, atol=1e-12):
+        raise ValueError('u0 must satisfy zero Dirichlet boundaries')
+    coefficients = 2 * dst(initial[:, 1:-1], type=1, norm='forward', axis=-1)
+    return solve_l1_sine_batch(coefficients, alpha, initial.shape[1], n_steps, T,
+                               sample_steps=sample_steps)

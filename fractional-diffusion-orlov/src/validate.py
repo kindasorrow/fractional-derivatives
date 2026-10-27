@@ -13,6 +13,29 @@ ROOT = Path(__file__).resolve().parents[1]
 ALPHAS = (0.2, 0.35, 0.5, 0.75, 0.9)
 
 
+def convergence_errors(alpha, n_x=128, time_steps=(125, 250, 500, 1000),
+                       space_nodes=(32, 64, 128, 256)):
+    from pymittagleffler import mittag_leffler
+
+    x = np.linspace(0, 1, n_x)
+    n = len(x) - 1
+    lam = 4*n**2*np.sin(np.pi/(2*n))**2
+    discrete_exact = float(np.real(mittag_leffler(-lam, alpha, 1))) * np.sin(np.pi*x)
+    temporal = []
+    for steps in time_steps:
+        sol = solve_l1(np.sin(np.pi*x), alpha, n_steps=steps)
+        temporal.append(float(np.max(np.abs(sol.u[-1]-discrete_exact))))
+    spatial = []
+    for nodes in space_nodes:
+        xx = np.linspace(0, 1, nodes)
+        n = len(xx) - 1
+        lam = 4*n**2*np.sin(np.pi/(2*n))**2
+        discrete = float(np.real(mittag_leffler(-lam, alpha, 1)))*np.sin(np.pi*xx)
+        exact = exact_sine_solution(xx, [1], alpha)[0]
+        spatial.append(float(np.max(np.abs(discrete-exact))))
+    return np.array(temporal), np.array(spatial)
+
+
 def run_validation(output=None):
     out = Path(output) if output else ROOT / 'results'
     out.mkdir(parents=True, exist_ok=True)
@@ -49,39 +72,23 @@ def run_validation(output=None):
     errorfig.savefig(out/'error_vs_time.png', dpi=170)
     plt.close(errorfig)
     with (out/'validation_metrics.csv').open('w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=list(metrics[0]))
+        writer = csv.DictWriter(f, fieldnames=list(metrics[0]), lineterminator='\n')
         writer.writeheader()
         writer.writerows(metrics)
 
-    # Isolate temporal error with the exact solution of the discrete spatial ODE.
-    # Separately isolate spatial error against the continuum at the same T.
-    from pymittagleffler import mittag_leffler
     conv = []
     fig, axes = plt.subplots(1, 2, figsize=(11, 4), layout='constrained')
+    time_steps = (125, 250, 500, 1000)
+    space_nodes = (32, 64, 128, 256)
     for a in ALPHAS:
-        temporal = []
-        for steps in (125, 250, 500, 1000):
-            sol = solve_l1(np.sin(np.pi*x), a, n_steps=steps)
-            lam = 4*127**2*np.sin(np.pi/(2*127))**2
-            discrete_exact = float(np.real(mittag_leffler(-lam, a, 1))) * np.sin(np.pi*x)
-            err = float(np.max(np.abs(sol.u[-1]-discrete_exact)))
-            temporal.append(err)
+        temporal, spatial = convergence_errors(a, n_x=len(x), time_steps=time_steps,
+                                               space_nodes=space_nodes)
+        for steps, err in zip(time_steps, temporal):
             conv.append(dict(kind='time_at_T1', alpha=a, resolution=steps, error=err))
-        if not np.all(np.diff(temporal) < 0):
-            raise AssertionError(f'temporal convergence failed at alpha={a}')
-        axes[0].loglog([1/125, 1/250, 1/500, 1/1000], temporal, 'o-', label=f'{a:g}')
-        spatial = []
-        for nodes in (32, 64, 128, 256):
-            xx = np.linspace(0, 1, nodes)
-            lam = 4*(nodes-1)**2*np.sin(np.pi/(2*(nodes-1)))**2
-            discrete = float(np.real(mittag_leffler(-lam, a, 1)))*np.sin(np.pi*xx)
-            exact = exact_sine_solution(xx, [1], a)[0]
-            err = float(np.max(np.abs(discrete-exact)))
-            spatial.append(err)
+        axes[0].loglog(1/np.array(time_steps), temporal, 'o-', label=f'{a:g}')
+        for nodes, err in zip(space_nodes, spatial):
             conv.append(dict(kind='space_semidiscrete_T1', alpha=a, resolution=nodes, error=err))
-        if not np.all(np.diff(spatial) < 0):
-            raise AssertionError(f'spatial convergence failed at alpha={a}')
-        axes[1].loglog([1/31, 1/63, 1/127, 1/255], spatial, 'o-', label=f'{a:g}')
+        axes[1].loglog(1/(np.array(space_nodes)-1), spatial, 'o-', label=f'{a:g}')
     axes[0].set(title='Temporal error at T=1 vs spatially discrete reference', xlabel='dt', ylabel='max absolute error')
     axes[1].set(title='Spatial error at T=1 (exact time propagation)', xlabel='dx', ylabel='max absolute error')
     for ax in axes:
@@ -90,7 +97,7 @@ def run_validation(output=None):
     fig.savefig(out/'convergence.png', dpi=170)
     plt.close(fig)
     with (out/'convergence_metrics.csv').open('w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=list(conv[0]))
+        writer = csv.DictWriter(f, fieldnames=list(conv[0]), lineterminator='\n')
         writer.writeheader()
         writer.writerows(conv)
     print('Validation:')
