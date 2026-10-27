@@ -1,0 +1,13 @@
+# Large generated data (~82 MB): regenerate with `python -m src.datagen`.
+data/*.npz
+# ...but keep the small committed demo and the cached Jiang node sets.
+!data/demo_small.npz
+!data/jiang_nodes_*.npz
+data/checkpoints/
+# results/ (figures + json) IS committed; caches are not.
+frac/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
