@@ -1,0 +1,264 @@
+import argparse
+import csv
+import math
+import random
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable
+from typing import Optional, Dict, Union
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
+import torch
+import torch.nn.functional as F
+from skimage.metrics import peak_signal_noise_ratio, structural_similarity
+
+IMAGE_EXTS = {".jpg", ".jpeg", ".png"}
+
+@dataclass
+class Sample:
+    dataset: str
+    name: str
+    clean: np.ndarray       # H x W x 3, float32, range [0, 255]
+    noisy: np.ndarray       # H x W x 3, float32, range [0, 255]
+    pm: Optional[np.ndarray] = None
+
+    
+    frac_by_alpha: Union[Dict[float, np.ndarray], None] = None
+
+def discover_images(root: Path) -> list[Path]:
+    if not root.exists():
+        raise FileNotFoundError(f"Dataset directory does not exist: {root}")
+    return sorted(p for p in root.rglob("*") if p.is_file() and p.suffix.lower() in IMAGE_EXTS)
+
+def choose_files(root: Path, count: int, seed: int) -> list[Path]:
+    files = discover_images(root)
+    if len(files) < count:
+        raise RuntimeError(f"Found only {len(files)} images in {root}; need {count}.")
+    rng = random.Random(seed)
+    return sorted(rng.sample(files, count))
+
+def read_rgb(path: Path, max_side: int) -> np.ndarray:
+    image = Image.open(path).convert("RGB")
+    w, h = image.size
+    scale = min(1.0, float(max_side) / max(w, h))
+    if scale < 1.0:
+        new_size = (max(1, round(w * scale)), max(1, round(h * scale)))
+        image = image.resize(new_size, Image.Resampling.LANCZOS)
+    return np.asarray(image, dtype=np.float32)
+
+def add_gaussian_noise(clean: np.ndarray, sigma: float, seed: int) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    noise = rng.normal(0.0, sigma, clean.shape).astype(np.float32)
+    return np.clip(clean + noise, 0.0, 255.0).astype(np.float32)
+
+def shift_prev(x: torch.Tensor, k: int, dim: str) -> torch.Tensor:
+    
+    if dim == "x":
+        return F.pad(x, (k, 0, 0, 0), mode="replicate")[..., :x.shape[-1]]
+    return F.pad(x, (0, 0, k, 0), mode="replicate")[..., :x.shape[-2], :]
+
+def shift_next(x: torch.Tensor, k: int, dim: str) -> torch.Tensor:
+    
+    if dim == "x":
+        return F.pad(x, (0, k, 0, 0), mode="replicate")[..., k:k + x.shape[-1]]
+    return F.pad(x, (0, 0, 0, k), mode="replicate")[..., k:k + x.shape[-2], :]
+
+def perona_malik_repo_style(image: np.ndarray, iterations: int = 30,
+                            dt: float = 0.14, kappa: float = 30.0) -> np.ndarray:
+    u = torch.from_numpy(image.copy()).permute(2, 0, 1).contiguous().float()
+    directions = [
+        (-1, 0, 1.0), (1, 0, 1.0), (0, -1, 1.0), (0, 1, 1.0),
+        (-1, -1, 0.5), (-1, 1, 0.5), (1, -1, 0.5), (1, 1, 0.5),
+    ]
+    for _ in range(iterations):
+        terms = torch.zeros_like(u)
+        for dy, dx, factor in directions:
+            if dx == -1:
+                nb = shift_prev(u, 1, "x")
+            elif dx == 1:
+                nb = shift_next(u, 1, "x")
+            else:
+                nb = u
+            if dy == -1:
+                nb = shift_prev(nb, 1, "y")
+            elif dy == 1:
+                nb = shift_next(nb, 1, "y")
+            else:
+                nb = nb
+            diff = nb - u
+            magnitude = torch.mean(diff.square(), dim=0, keepdim=True).sqrt()
+            conductance = 1.0 / (1.0 + (magnitude / kappa).square())
+            terms.add_(conductance * diff, alpha=factor)
+        u = u + dt * terms
+        u.clamp_(0.0, 255.0)
+    return u.permute(1, 2, 0).cpu().numpy()
+
+
+def gl_weights(alpha: float, K: int) -> torch.Tensor:
+    coeff = [1.0]
+    for k in range(1, K + 1):
+        coeff.append(coeff[-1] * (1.0 - (alpha + 1.0) / k))
+    
+    lag = torch.tensor([-v for v in coeff[1:]], dtype=torch.float32)
+    total = lag.sum()
+    if not torch.isfinite(total) or total <= 0:
+        raise ValueError(f"Invalid GL weights for alpha={alpha}, K={K}")
+    return lag / total
+
+def gl_gradient(u: torch.Tensor, weights: torch.Tensor, dim: str) -> torch.Tensor:
+    result = torch.zeros_like(u)
+    for k, weight in enumerate(weights, start=1):
+        result.add_(u - shift_prev(u, k, dim), alpha=float(weight))
+    return result
+
+def gl_adjoint(flux: torch.Tensor, weights: torch.Tensor, dim: str) -> torch.Tensor:
+    result = torch.zeros_like(flux)
+    for k, weight in enumerate(weights, start=1):
+        result.add_(flux - shift_next(flux, k, dim), alpha=float(weight))
+    return result
+
+def fractional_anisotropic_diffusion(image: np.ndarray, alpha: float, K: int = 5,
+                                      iterations: int = 20, dt: float = 0.12,
+                                      kappa: float = 35.0) -> np.ndarray:
+    u = torch.from_numpy(image.copy()).permute(2, 0, 1).contiguous().float()
+    weights = gl_weights(alpha, K)
+    for _ in range(iterations):
+        gx = gl_gradient(u, weights, "x")
+        gy = gl_gradient(u, weights, "y")
+        magnitude = torch.mean(gx.square() + gy.square(), dim=0, keepdim=True).sqrt()
+        conductance = 1.0 / (1.0 + (magnitude / kappa).square())
+        fx, fy = conductance * gx, conductance * gy
+        divergence_adjoint = gl_adjoint(fx, weights, "x") + gl_adjoint(fy, weights, "y")
+        u = u - dt * divergence_adjoint
+        u.clamp_(0.0, 255.0)
+    return u.permute(1, 2, 0).cpu().numpy()
+
+def metrics(clean: np.ndarray, estimate: np.ndarray) -> tuple[float, float]:
+    est = np.clip(estimate, 0.0, 255.0).astype(np.float32)
+    p = float(peak_signal_noise_ratio(clean, est, data_range=255.0))
+    s = float(structural_similarity(clean, est, data_range=255.0, channel_axis=-1))
+    return p, s
+
+def save_comparison(sample: Sample, alpha: float, out_dir: Path) -> None:
+    assert sample.pm is not None and sample.frac_by_alpha is not None
+    frac = sample.frac_by_alpha[alpha]
+    titles = ["Clean reference", "Gaussian noise σ=25", "Perona–Malik", f"Fractional GL α={alpha:g}"]
+    imgs = [sample.clean, sample.noisy, sample.pm, frac]
+    fig, axes = plt.subplots(1, 4, figsize=(15, 4.2), constrained_layout=True)
+    for ax, title, im in zip(axes, titles, imgs):
+        ax.imshow(np.clip(im, 0, 255).astype(np.uint8))
+        ax.set_title(title, fontsize=10)
+        ax.axis("off")
+    name = Path(sample.name).stem
+    fig.suptitle(f"{sample.dataset}: {name}", fontsize=11)
+    safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in name)
+    fig.savefig(out_dir / f"comparison_{sample.dataset}_{safe_name}.png", dpi=140)
+    plt.close(fig)
+
+def save_curve(rows: list[dict], metric_name: str, out_path: Path) -> None:
+    groups = ["BSD500 photos", "DTD textures"]
+    fig, ax = plt.subplots(figsize=(7.5, 4.8), constrained_layout=True)
+    styles = {"BSD500 photos": "o-", "DTD textures": "s-"}
+    for group in groups:
+        subset = [r for r in rows if r["dataset_label"] == group and r["method"] == "Fractional GL"]
+        by_alpha: dict[float, list[float]] = {}
+        for r in subset:
+            by_alpha.setdefault(float(r["alpha"]), []).append(float(r[metric_name]))
+        xs = sorted(by_alpha)
+        ys = [float(np.mean(by_alpha[x])) for x in xs]
+        ax.plot(xs, ys, styles[group], linewidth=2, markersize=5, label=group)
+    for group in groups:
+        vals = [float(r[metric_name]) for r in rows if r["dataset_label"] == group and r["method"] == "Noisy"]
+        if vals:
+            ax.axhline(float(np.mean(vals)), linestyle="--", linewidth=1,
+                       label=f"{group} — noisy input")
+    ax.set_xlabel("Fractional order α")
+    ax.set_ylabel("PSNR (dB)" if metric_name == "psnr" else "SSIM")
+    ax.set_title(f"{metric_name.upper()} vs fractional order (mean over 5 images)")
+    ax.grid(True, alpha=0.25)
+    ax.legend(fontsize=8)
+    
+    plt.close(fig)
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    
+    
+    parser.add_argument("--bsd_dir", type=Path, default=Path(r"C:\Users\Annekra\source\repos\denoising_version3\bsd"), help="Folder containing BSDS500 images")
+    parser.add_argument("--dtd_dir", type=Path, default=Path(r"C:\Users\Annekra\source\repos\denoising_version3\dtd"), help="Folder containing DTD images")
+    
+    parser.add_argument("--out_dir", type=Path, default=Path("results"))
+    parser.add_argument("--count", type=int, default=5, help="Images per dataset (default: 5)")
+    parser.add_argument("--sigma", type=float, default=25.0, help="Gaussian noise standard deviation in 0..255 units")
+    parser.add_argument("--seed", type=int, default=2026)
+    parser.add_argument("--max_side", type=int, default=384, help="Resize longest image side to at most this size")
+    parser.add_argument("--alphas", type=float, nargs="+", default=[0.2, 0.4, 0.6, 0.8, 1.0])
+    parser.add_argument("--K", type=int, default=5, help="Number of GL lag weights")
+    parser.add_argument("--show_alpha", type=float, default=0.8, help="Fixed alpha used in side-by-side comparison images")
+    parser.add_argument("--pm_iterations", type=int, default=30)
+    parser.add_argument("--frac_iterations", type=int, default=20)
+    parser.add_argument("--kappa", type=float, default=30.0)
+    args = parser.parse_args()
+
+    if args.count < 1 or args.max_side < 16 or args.K < 1:
+        parser.error("count and K must be >=1; max_side must be >=16")
+    if not args.alphas or any(not (0.0 < a <= 1.0) for a in args.alphas):
+        parser.error("all alpha values must be in (0, 1]")
+    if args.show_alpha not in args.alphas:
+        parser.error("--show_alpha must be one of the values supplied to --alphas")
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+
+    bsd_files = choose_files(args.bsd_dir, args.count, args.seed)
+    dtd_files = choose_files(args.dtd_dir, args.count, args.seed + 1)
+    samples: list[Sample] = []
+    for dataset, paths in [("BSD500", bsd_files), ("DTD", dtd_files)]:
+        for i, path in enumerate(paths):
+            clean = read_rgb(path, args.max_side)
+            noisy = add_gaussian_noise(clean, args.sigma, args.seed + 1000 * (1 if dataset == "BSD500" else 2) + i)
+            samples.append(Sample(dataset, path.name, clean, noisy, frac_by_alpha={}))
+
+    rows: list[dict] = []
+    
+    for idx, sample in enumerate(samples, start=1):
+        """print(f"[{idx}/{len(samples)}] {sample.dataset}/{sample.name}", flush=True)"""
+        p, s = metrics(sample.clean, sample.noisy)
+        rows.append({"dataset": sample.dataset, "dataset_label": "BSD500 photos" if sample.dataset == "BSD500" else "DTD textures",
+                     "image": sample.name, "method": "Noisy", "alpha": "", "psnr": p, "ssim": s})
+        sample.pm = perona_malik_repo_style(sample.noisy, iterations=args.pm_iterations, kappa=args.kappa)
+        p, s = metrics(sample.clean, sample.pm)
+        rows.append({"dataset": sample.dataset, "dataset_label": "BSD500 photos" if sample.dataset == "BSD500" else "DTD textures",
+                     "image": sample.name, "method": "Perona-Malik", "alpha": "", "psnr": p, "ssim": s})
+        for alpha in args.alphas:
+            out = fractional_anisotropic_diffusion(sample.noisy, alpha, K=args.K,
+                     iterations=args.frac_iterations, kappa=args.kappa)
+            sample.frac_by_alpha[alpha] = out
+            p, s = metrics(sample.clean, out)
+            rows.append({"dataset": sample.dataset, "dataset_label": "BSD500 photos" if sample.dataset == "BSD500" else "DTD textures",
+                         "image": sample.name, "method": "Fractional GL", "alpha": alpha, "psnr": p, "ssim": s})
+        save_comparison(sample, args.show_alpha, args.out_dir)
+
+    
+    save_curve(rows, "psnr", args.out_dir / "psnr_vs_alpha.png")
+    save_curve(rows, "ssim", args.out_dir / "ssim_vs_alpha.png")
+
+    print("\nMean metrics by dataset and method:")
+    combos = []
+    for dlabel in ["BSD500 photos", "DTD textures"]:
+        for method in ["Noisy", "Perona-Malik", "Fractional GL"]:
+            subset = [r for r in rows if r["dataset_label"] == dlabel and r["method"] == method]
+            if method == "Fractional GL":
+                for alpha in args.alphas:
+                    ss = [r for r in subset if float(r["alpha"]) == alpha]
+                    combos.append((dlabel, method, alpha, np.mean([r["psnr"] for r in ss]), np.mean([r["ssim"] for r in ss])))
+            else:
+                combos.append((dlabel, method, "-", np.mean([r["psnr"] for r in subset]), np.mean([r["ssim"] for r in subset])))
+    for dlabel, method, alpha, p, s in combos:
+        print(f"{dlabel:14s} | {method:13s} | alpha={alpha!s:>4s} | PSNR={p:6.2f} dB | SSIM={s:.4f}")
+    
+
+if __name__ == "__main__":
+    main()
+
