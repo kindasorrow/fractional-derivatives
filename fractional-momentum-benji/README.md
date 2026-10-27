@@ -11,10 +11,14 @@
 ## Структура проекта
 * `data/` — данные (MNIST/CIFAR-10 скачиваются автоматически, в git не входят).
 * `src/` — исходный код (оптимизаторы, модель, скрипты обучения).
-* `notebooks/` — Jupyter ноутбуки с экспериментами.
 * `results/` — графики и таблицы.
 
 ## Как запустить
+Из папки `fractional-momentum-benji`:
+
 ```bash
 pip install -r requirements.txt
-python src/train.py
+python -m src.train
+```
+
+MNIST скачается в `data/` автоматически, график сохранится в `results/comparison.png`.

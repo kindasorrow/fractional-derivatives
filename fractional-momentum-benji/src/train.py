@@ -52,7 +52,7 @@ def train_and_evaluate(optimizer_name, optimizer, model, trainloader, testloader
     
     return history, (end_time - start_time), (mem_end - mem_start)
 
-def plot_results(results_dict, save_path='../results/comparison.png'):
+def plot_results(results_dict, save_path='results/comparison.png'):
     plt.figure(figsize=(12, 5))
     
     # Loss
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     hist_fast, time_fast, mem_fast = train_and_evaluate("Fractionnaire Rapide", opt_fast, model_fast, trainloader, testloader, EPOCHS)
     results["Frac. Rapide"] = {'history': hist_fast, 'time': time_fast, 'mem': mem_fast}
 
-    plot_results(results, save_path='../results/comparison.png')
+    plot_results(results, save_path='results/comparison.png')
 
     # Таблица результатов
     print("\n" + "="*50)
