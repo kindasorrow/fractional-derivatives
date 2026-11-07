@@ -1,21 +1,26 @@
-### Accuracy vs sequence length (median relative $L_2$; trained only at L=1000)
+> **Reference.** Every error below is relative to the **L1 solution** (the training target), not to the continuous equation. The L1 scheme itself deviates from the exact kernel K(t) by +70% at t=tau, 7.6% at t=0.1, 1.5% at t=0.7 and ~0.1% only by t~12 (`results/validation.json`), so these numbers say how well a model learns the *L1 operator*. For statements about the equation, regenerate the data on a 10x finer grid and decimate.
 
-| model | params | L=1000 | L=2000 | L=4000 | L=7000 | L=10000 | unseen a |
-|---|---|---|---|---|---|---|---|
-| Transformer (RoPE) | 76,577 | 2.39e-02 | 5.85e-01 | 8.04e-01 | 8.84e-01 | 9.40e-01 | 9.25e-01 |
-| Transformer (NoPE) | 76,577 | 1.81e-01 | 2.49e-01 | 2.87e-01 | 4.12e-01 | 4.08e-01 | 4.02e-01 |
-| Transformer (ALiBi) | 76,577 | 3.52e-02 | 4.09e-02 | 5.15e-02 | 5.47e-02 | 5.45e-02 | 4.52e-02 |
-| S4D (deep, 2 blocks) | 68,129 | 1.62e-03 | 3.21e-03 | 1.23e-02 | 2.76e-02 | 3.98e-02 | 3.68e-02 |
-| S4D-linear (log init) | 3,360 | 6.18e-04 | 1.75e-03 | 3.87e-03 | 5.38e-03 | 5.43e-03 | 9.68e-03 |
-| S4D-linear (linear init) | 3,360 | 8.94e-04 | 2.44e-03 | 4.06e-03 | 5.81e-03 | 5.51e-03 | 1.04e-02 |
-| S4D-linear (single-scale init) | 3,360 | 8.20e-04 | 1.91e-03 | 3.98e-03 | 5.52e-03 | 5.35e-03 | 6.93e-03 |
-| S4D-linear (softplus rates) | 3,360 | 1.71e-03 | 3.07e-03 | 6.33e-03 | 9.63e-03 | 9.48e-03 | 1.23e-02 |
-| S4D-linear (trained at L=10000) | 3,360 | 9.31e-04 | 1.12e-03 | 1.40e-03 | 1.55e-03 | 1.67e-03 | 2.30e-03 |
-| S4D-linear (1-scale init, trained at L=10000) | 3,360 | 1.33e-03 | 1.87e-03 | 2.41e-03 | 2.55e-03 | 2.94e-03 | 4.13e-03 |
-| SOE / Jiang (fixed exponents) | 3,296 | 9.11e-04 | 2.31e-03 | 6.24e-03 | 1.37e-02 | 1.61e-02 | 2.44e-02 |
-| SOE / Jiang (per-alpha readout) | 512 | 7.09e-04 | 4.31e-03 | 1.59e-02 | 3.32e-02 | 3.93e-02 | 2.62e-01 |
-| SOE / Jiang, train-horizon band | 3,296 | 4.74e-04 | 1.68e-03 | 6.34e-03 | 1.56e-02 | 1.88e-02 | 2.62e-02 |
-| *Jiang nodes + LS weights (no training)* | -- | 3.09e-08 | 3.23e-08 | 3.41e-08 | 3.31e-08 | 3.22e-08 | -- |
+### Accuracy vs sequence length (median relative $L_2$ vs the L1 solution; trained only at L=1000)
+
+| model | knows T=100? | params | seeds | L=1000 | L=2000 | L=4000 | L=7000 | L=10000 | unseen a |
+|---|---|---|---|---|---|---|---|---|---|
+| Transformer (RoPE) | no | 76,577 | 1 | 2.39e-02 | 5.85e-01 | 8.04e-01 | 8.84e-01 | 9.40e-01 | 9.25e-01 |
+| Transformer (NoPE) | no | 76,577 | 1 | 1.81e-01 | 2.49e-01 | 2.87e-01 | 4.12e-01 | 4.08e-01 | 4.02e-01 |
+| Transformer (ALiBi) | no | 76,577 | 1 | 3.52e-02 | 4.09e-02 | 5.15e-02 | 5.47e-02 | 5.45e-02 | 4.52e-02 |
+| S4D (deep, 2 blocks) | no | 68,129 | 1 | 1.62e-03 | 3.21e-03 | 1.23e-02 | 2.76e-02 | 3.98e-02 | 3.68e-02 |
+| S4D-linear (log init) | no | 3,360 | 1 | 6.18e-04 | 1.75e-03 | 3.87e-03 | 5.38e-03 | 5.43e-03 | 9.68e-03 |
+| S4D-linear (linear init) | no | 3,360 | 1 | 8.94e-04 | 2.44e-03 | 4.06e-03 | 5.81e-03 | 5.51e-03 | 1.04e-02 |
+| S4D-linear (single-scale init) | no | 3,360 | 1 | 8.20e-04 | 1.91e-03 | 3.98e-03 | 5.52e-03 | 5.35e-03 | 6.93e-03 |
+| S4D-linear (softplus rates) | no | 3,360 | 1 | 1.71e-03 | 3.07e-03 | 6.33e-03 | 9.63e-03 | 9.48e-03 | 1.23e-02 |
+| S4D-linear (trained at L=10000) | yes: trained on L=10^4 | 3,360 | 1 | 9.31e-04 | 1.12e-03 | 1.40e-03 | 1.55e-03 | 1.67e-03 | 2.30e-03 |
+| S4D-linear (1-scale init, trained at L=10000) | yes: trained on L=10^4 | 3,360 | 1 | 1.33e-03 | 1.87e-03 | 2.41e-03 | 2.55e-03 | 2.94e-03 | 4.13e-03 |
+| SOE / Jiang (fixed exponents) | yes: nodes built for T=100 | 3,296 | 1 | 9.11e-04 | 2.31e-03 | 6.24e-03 | 1.37e-02 | 1.61e-02 | 2.44e-02 |
+| SOE / Jiang (per-alpha readout) | yes: nodes built for T=100 | 512 | 1 | 7.09e-04 | 4.31e-03 | 1.59e-02 | 3.32e-02 | 3.93e-02 | 2.62e-01 |
+| SOE / Jiang, train-horizon band | no: nodes built for T=10 | 3,296 | 1 | 4.74e-04 | 1.68e-03 | 6.34e-03 | 1.56e-02 | 1.88e-02 | 2.62e-02 |
+| *Jiang nodes + LS weights (no training)* | yes: nodes + LS weights for T=100 | -- | -- | 3.09e-08 | 3.23e-08 | 3.41e-08 | 3.31e-08 | 3.22e-08 | -- |
+
+
+`knows T=100?` marks which models were built with, or trained on, the test horizon (T = 100 s): `soe_jiang*` get their nodes from Jiang's rule for T=100, the `*_longtrain` models are trained on L=10^4 sequences. Everything marked `no` only knows T=10 s. Rows with seeds > 1 are mean ± sd over seeds (n = the `seeds` column).
 
 
 ### Inference cost (RTX 4060 Ti, batch 1, fp32)
@@ -24,7 +29,7 @@
 |---|---|---|---|---|---|---|---|---|
 | Transformer (RoPE) | 2.55e+00 | 1.60e+01 | 0.78 | 11.6 | 32.0 | 0.44 | 1179 | 317 |
 | Transformer (NoPE) | 1.57e+00 | 1.54e+01 | 1.02 | 11.1 | 26.6 | 0.38 | 1089 | 284 |
-| Transformer (ALiBi) | 2.20e+00 | 1.11e+02 | 1.75 | 50.7 | 3837.2 | 1.89 | 1930 | 317 |
+| Transformer (ALiBi) † | 2.20e+00 | 1.11e+02 | 1.75 | 50.7 | 3837.2 | 1.89 | 1930 | 317 |
 | S4D (deep, 2 blocks) | 2.81e+00 | 5.58e+00 | 0.31 | 42.0 | 64.4 | 0.16 | 435 | 317 |
 | S4D-linear (log init) | 9.43e-01 | 1.07e+00 | 0.06 | 9.6 | 14.1 | 0.16 | 202 | 50 |
 | S4D-linear (linear init) | 8.59e-01 | 9.78e-01 | 0.02 | 9.6 | 14.1 | 0.16 | 187 | 50 |
@@ -35,6 +40,9 @@
 | SOE / Jiang (fixed exponents) | 8.21e-01 | 8.99e-01 | 0.05 | 9.6 | 14.1 | 0.16 | 136 | 50 |
 | SOE / Jiang (per-alpha readout) | 6.57e-01 | 6.73e-01 | 0.00 | 9.6 | 14.1 | 0.16 | 112 | 50 |
 | SOE / Jiang, train-horizon band | 9.72e-01 | 8.49e-01 | -0.04 | 9.6 | 14.1 | 0.16 | 136 | 50 |
+
+
+† STALE: these ALiBi time/memory numbers come from the original implementation that builds the full (1, H, L, L) bias (1.6 GB at L=10^4; SDPA cannot use its flash kernel with an arbitrary mask). They measure the implementation, not the method. Re-run `python -m src.bench` after training to refresh.
 
 
 ### Classical solvers (CPU, numpy/scipy)

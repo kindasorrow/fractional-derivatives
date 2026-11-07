@@ -16,8 +16,30 @@ from .config import L_SCALING, L_TRAIN, RESULTS
 ORDER = ["transformer_rope", "transformer_nope", "transformer_alibi",
          "s4d_deep", "s4d_lin_log", "s4d_lin_linear", "s4d_lin_narrow",
          "s4d_lin_softplus", "s4d_lin_log_longtrain",
-         "s4d_lin_narrow_longtrain", "soe_jiang", "soe_jiang_table",
-         "soe_jiang_trainband"]
+         "s4d_lin_narrow_longtrain", "s4d_lin_log_lsinit", "soe_jiang",
+         "soe_jiang_table", "soe_jiang_trainband", "soe_jiang_lsinit"]
+
+# What each model is told about the TEST horizon (T = 100 s, L = 10^4), so the
+# accuracy table reads unambiguously.  "no" = it only ever saw / was built for
+# the training horizon T = 10 s (L = 1000).
+KNOWS_T100 = {
+    "soe_jiang": "yes: nodes built for T=100",
+    "soe_jiang_table": "yes: nodes built for T=100",
+    "soe_jiang_lsinit": "yes: nodes + LS weights for T=100",
+    "soe_jiang_trainband": "no: nodes built for T=10",
+    "s4d_lin_log_lsinit": "partly: LS weights fitted on L=1000 kernel",
+    "s4d_lin_log_longtrain": "yes: trained on L=10^4",
+    "s4d_lin_narrow_longtrain": "yes: trained on L=10^4",
+}
+KNOWS_DEFAULT = "no"
+
+L1_NOTE = ("> **Reference.** Every error below is relative to the **L1 solution** "
+           "(the training target), not to the continuous equation. The L1 scheme "
+           "itself deviates from the exact kernel K(t) by +70% at t=tau, 7.6% at "
+           "t=0.1, 1.5% at t=0.7 and ~0.1% only by t~12 (`results/validation.json`), "
+           "so these numbers say how well a model learns the *L1 operator*. For "
+           "statements about the equation, regenerate the data on a 10x finer grid "
+           "and decimate.\n")
 
 
 def _j(name):
@@ -39,23 +61,61 @@ def _slope(x, y):
     return float(np.polyfit(np.log(x[m]), np.log(y[m]), 1)[0])
 
 
+def _ms(vals, nd=2):
+    """mean +/- sd over seeds (n>=2), or the single value."""
+    v = np.asarray([x for x in vals if x is not None], float)
+    if v.size == 0:
+        return "--"
+    if v.size == 1:
+        return _fmt(float(v[0]), nd)
+    return f"{v.mean():.{nd}e} ± {v.std(ddof=1):.1e}"
+
+
 def table_main(b):
-    """Accuracy vs length + held-out alpha."""
-    hdr = ["model", "params"] + [f"L={L}" for L in L_SCALING] + ["unseen a"]
+    """Accuracy vs length + held-out alpha.
+
+    Models with several seeds show mean ± sd over seeds (the `seeds` column says
+    how many); the rest are single runs.  `knows T=100?` says whether the model
+    was built with / trained on the test horizon.
+    """
+    hdr = (["model", "knows T=100?", "params", "seeds"] +
+           [f"L={L}" for L in L_SCALING] + ["unseen a"])
     rows = []
     for nm in ORDER:
         m = b["models"].get(nm)
         if m is None:
             continue
+        runs = m.get("seed_runs") or {}
         acc = {r["L"]: r["acc"].get("med") for r in m["scaling"]}
-        rows.append([m["label"], f"{m['n_params']:,}"] +
-                    [_fmt(acc.get(L)) for L in L_SCALING] +
-                    [_fmt(m.get("heldout_alpha", {}).get("all_med"))])
+        if len(runs) >= 2:
+            cells = [_ms([r["med_by_L"].get(str(L)) for r in runs.values()])
+                     for L in L_SCALING]
+            ho = _ms([r["heldout_all_med"] for r in runs.values()])
+        else:
+            cells = [_fmt(acc.get(L)) for L in L_SCALING]
+            ho = _fmt(m.get("heldout_alpha", {}).get("all_med"))
+        rows.append([m["label"], KNOWS_T100.get(nm, KNOWS_DEFAULT),
+                     f"{m['n_params']:,}", str(max(1, len(runs)))] + cells + [ho])
     ref = b.get("soe_ls")
     if ref:
-        rows.append(["*Jiang nodes + LS weights (no training)*", "--"] +
+        rows.append(["*Jiang nodes + LS weights (no training)*",
+                     "yes: nodes + LS weights for T=100", "--", "--"] +
                     [_fmt(ref[str(L)]["med"]) for L in L_SCALING] + ["--"])
     return hdr, rows
+
+
+def table_mixed(b):
+    """Error on mixed_lengths.npz: random lengths in [1000, 10000], no padding."""
+    rows, bins = [], None
+    for nm in ORDER:
+        mx = b["models"].get(nm, {}).get("mixed")
+        if not mx or "med" not in mx:
+            continue
+        if bins is None:
+            bins = list(mx["by_length"])
+        rows.append([b["models"][nm]["label"], _fmt(mx["med"])] +
+                    [_fmt(mx["by_length"].get(k)) for k in bins])
+    return (["model", "median"] + [f"len {k}" for k in bins], rows) if bins else (None, None)
 
 
 def table_cost(b):
@@ -71,7 +131,7 @@ def table_cost(b):
         mem = [r["speed"]["peak_MiB"] for r in m["scaling"] if r["speed"]["ok"]]
         g = {r["L"]: r["speed"] for r in m["scaling"]}
         rows.append([
-            m["label"],
+            m["label"] + (" †" if nm == "transformer_alibi" else ""),
             _fmt(g[1000]["time_ms"], 2) if g[1000]["ok"] else "OOM",
             _fmt(g[10000]["time_ms"], 2) if g[10000]["ok"] else "OOM",
             f"{_slope(L, t):.2f}",
@@ -158,12 +218,36 @@ def md(hdr, rows):
 def main():
     b, an = _j("bench.json"), _j("analysis.json")
     parts = []
+    parts.append(L1_NOTE)
     if b:
         parts.append("### Accuracy vs sequence length "
-                     f"(median relative $L_2$; trained only at L={L_TRAIN})\n")
+                     f"(median relative $L_2$ vs the L1 solution; trained only at L={L_TRAIN})\n")
         parts.append(md(*table_main(b)))
+        parts.append("\n`knows T=100?` marks which models were built with, or "
+                     "trained on, the test horizon (T = 100 s): `soe_jiang*` get "
+                     "their nodes from Jiang's rule for T=100, the `*_longtrain` "
+                     "models are trained on L=10^4 sequences. Everything marked "
+                     "`no` only knows T=10 s. Rows with seeds > 1 are mean ± sd "
+                     "over seeds (n = the `seeds` column).\n")
+        mh, mr = table_mixed(b)
+        if mh:
+            parts.append("\n### Variable-length sequences "
+                         "(`mixed_lengths.npz`, lengths uniform in [1000, 10000], "
+                         "each run at its own length)\n")
+            parts.append(md(mh, mr))
         parts.append("\n### Inference cost (RTX 4060 Ti, batch 1, fp32)\n")
         parts.append(md(*table_cost(b)))
+        if b.get("alibi_impl"):
+            parts.append("\n† ALiBi bias is built per block of 512 queries "
+                         "(`models.alibi_attention`), so memory is O(H·512·L). "
+                         "Compute is still O(L²): that part is the method's.\n")
+        else:
+            parts.append("\n† STALE: these ALiBi time/memory numbers come from "
+                         "the original implementation that builds the full "
+                         "(1, H, L, L) bias (1.6 GB at L=10^4; SDPA cannot use "
+                         "its flash kernel with an arbitrary mask). They "
+                         "measure the implementation, not the method. Re-run "
+                         "`python -m src.bench` after training to refresh.\n")
         parts.append("\n### Classical solvers (CPU, numpy/scipy)\n")
         parts.append(md(*table_classical(b)))
         parts.append("\n### Error at L=10000 by forcing family\n")

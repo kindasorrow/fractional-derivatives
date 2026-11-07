@@ -64,7 +64,7 @@ def kernel(t, alpha: float, lam: float):
 
 
 def step_response(t, alpha: float, lam: float):
-    """y(t) for f == 1, i.e. (1 - E_a(-lam t^a))/lam, via the spectral integral.
+    r"""y(t) for f == 1, i.e. (1 - E_a(-lam t^a))/lam, via the spectral integral.
 
         y(t) = \int_0^\infty mu(s) (1 - e^{-s t}) / s ds
     """
@@ -95,7 +95,7 @@ def kernel_asymptotes(t, alpha: float, lam: float):
 
 
 def check_spectral_density(alpha: float, lam: float, ps=(0.03, 0.3, 3.0, 30.0)):
-    """Verify  \int mu(s)/(p+s) ds == 1/(p^a + lam)  (Laplace of the SOE rep)."""
+    r"""Verify  \int mu(s)/(p+s) ds == 1/(p^a + lam)  (Laplace of the SOE rep)."""
     errs = []
     for p in ps:
         fn = lambda x: spectral_density(np.exp(x), alpha, lam) * np.exp(x) / (p + np.exp(x))

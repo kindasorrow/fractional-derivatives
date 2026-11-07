@@ -264,6 +264,8 @@ def _rope(q, k, base: float = 10000.0):
 
 
 def _alibi_bias(n_heads: int, L: int, device) -> torch.Tensor:
+    """Full (1, H, L, L) bias.  Reference implementation only (used by
+    `src.selftest` to check `alibi_attention`); the model no longer builds it."""
     slopes = 2.0 ** (-8.0 * (torch.arange(n_heads, device=device,
                                           dtype=torch.float32) + 1) / n_heads)
     d = torch.arange(L, device=device, dtype=torch.float32)
@@ -271,6 +273,31 @@ def _alibi_bias(n_heads: int, L: int, device) -> torch.Tensor:
     bias = slopes[:, None, None] * dist[None]
     causal = torch.triu(torch.full((L, L), float("-inf"), device=device), 1)
     return (bias + causal[None])[None]                          # (1, H, L, L)
+
+
+def alibi_attention(q, k, v, q_block: int = 512):
+    """Causal ALiBi attention without the (1, H, L, L) bias tensor.
+
+    q, k, v: (B, H, L, Dh).  The bias slope_h * (j - i) is built one block of
+    queries at a time, shape (H, q_block, <=L), and only for the keys a block can
+    see (j <= i), so peak extra memory is O(H * q_block * L) instead of
+    O(H * L^2) (1.6 GB at L = 10000).  The result is identical to the full-matrix
+    version (see `src.selftest`); the O(L^2) compute is the method's, the O(L^2)
+    memory of the old implementation was not.
+    """
+    B, H, L, Dh = q.shape
+    slopes = 2.0 ** (-8.0 * (torch.arange(H, device=q.device,
+                                          dtype=torch.float32) + 1) / H)
+    pos = torch.arange(L, device=q.device, dtype=torch.float32)
+    outs = []
+    for a in range(0, L, q_block):
+        b = min(a + q_block, L)
+        dist = pos[None, :b] - pos[a:b, None]                  # (qb, b): j - i
+        bias = (slopes[:, None, None] * dist[None]).masked_fill(dist[None] > 0,
+                                                                  float("-inf"))
+        outs.append(F.scaled_dot_product_attention(
+            q[:, :, a:b], k[:, :, :b], v[:, :, :b], attn_mask=bias[None]))
+    return torch.cat(outs, dim=2)
 
 
 class Attn(nn.Module):
@@ -287,8 +314,7 @@ class Attn(nn.Module):
         if self.pos == "rope":
             q, k = _rope(q, k)
         if self.pos == "alibi":
-            o = F.scaled_dot_product_attention(
-                q, k, v, attn_mask=_alibi_bias(self.h, L, x.device))
+            o = alibi_attention(q, k, v)
         else:
             o = F.scaled_dot_product_attention(q, k, v, is_causal=True)
         return self.proj(o.transpose(1, 2).reshape(B, L, d))

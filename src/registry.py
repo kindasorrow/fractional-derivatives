@@ -7,6 +7,8 @@ soe_jiang            fixed exponents = Jiang nodes for the *deployment* horizon
                      horizon needs, so the model is allowed to use them).
 soe_jiang_trainband  the same, but the Jiang rule only knows the *training*
                      horizon T = L_TRAIN*tau -- ablation for the band prior.
+soe_jiang_lsinit     the same, with the readout initialised at the least-squares
+                     solution (tests whether the ~1e-3 floor is optimisation)
 soe_jiang_table      the same nodes with one free readout vector per training
                      alpha instead of an alpha-MLP (optimisation control).
 s4d_lin_*            single-layer linear SSM with learned rates, three
@@ -51,6 +53,20 @@ SPECS = {
     "soe_jiang_table": dict(
         family="soe", build=lambda: _soe_table(T_LONG),
         label="SOE / Jiang (per-alpha readout)", steps=40000),
+
+    # ---- readout initialised at the least-squares solution -----------------
+    # Same models as soe_jiang / s4d_lin_log, but the readout starts at the LS
+    # fit to the exact L1 kernel (src.lsinit) instead of ~0.  Tests whether the
+    # ~1e-3 error floor is an optimisation artefact (LS weights reach ~3e-8).
+    "soe_jiang_lsinit": dict(
+        family="soe", build=lambda: _soe(T_LONG), ls_init=L_LONG,
+        label="SOE / Jiang (LS-initialised readout)", steps=40000),
+    "s4d_lin_log_lsinit": dict(
+        family="s4d_lin",
+        build=lambda: (S4DLinear(N_STATES, TAU, S_LO_TRAIN, S_HI, init="log"),
+                       dict(init="log", rate_param="log")),
+        ls_init=L_TRAIN,
+        label="S4D-linear (log init, LS-initialised readout)", steps=40000),
 
     # ---- learned rates, same architecture -------------------------------
     "s4d_lin_log": dict(

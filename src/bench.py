@@ -7,6 +7,18 @@ Classical CPU reference solvers live in `src.bench_classical` (separate
 process: torch's libiomp and Anaconda's MKL clash); if its json is present it
 is merged into the report here.
 
+Besides the length sweep this also reports
+  * `seed_runs`: median error per length for every available seed of the SEEDED
+    models (the report prints mean +/- sd);
+  * `mixed`: error on `mixed_lengths.npz` (random lengths in [1000, 10000], the
+    literal task spec), each sequence run at its OWN length, no padding;
+  * speed / memory.  NOTE: the ALiBi numbers measured before the chunked
+    implementation (`models.alibi_attention`) reflected the full L x L bias
+    matrix, not the method.
+
+Accuracy is always relative to the L1 solution (the training target), not to
+the continuous equation; see README section 2.
+
 Run:  python -m src.bench_classical && python -m src.bench
 """
 
@@ -20,15 +32,21 @@ import time
 import numpy as np
 import torch
 
+from .bands import SEEDED
 from .config import (ALPHAS_TRAIN, CKPT, LAM, L_LONG, L_SCALING, L_TRAIN,
-                     N_STATES, RESULTS, TAU)
+                     N_STATES, RESULTS, SEED, SEEDS, TAU, tag)
 from .data import SeqData, path, rel_l2
+from .jsonio import dump_compact
 from .registry import SPECS, build
 
 
 # ---------------------------------------------------------------------------
-def load_model(name: str, device="cuda"):
-    ck = torch.load(os.path.join(CKPT, f"{name}.pt"), map_location=device,
+def ckpt_path(name: str, seed: int = SEED) -> str:
+    return os.path.join(CKPT, f"{tag(name, seed)}.pt")
+
+
+def load_model(name: str, device="cuda", seed: int = SEED):
+    ck = torch.load(ckpt_path(name, seed), map_location=device,
                     weights_only=False)
     model, _ = build(name)
     model.load_state_dict(ck["state_dict"])
@@ -50,6 +68,25 @@ def accuracy(model, ds: SeqData, device="cuda", batch: int = 8):
         sq = e2 if sq is None else sq + e2
         ysq = y2 if ysq is None else ysq + y2
     return torch.cat(errs).numpy(), (sq / len(ds)).sqrt().numpy(), (ysq / len(ds)).sqrt().numpy()
+
+
+@torch.no_grad()
+def accuracy_mixed(model, ds: SeqData, device="cuda"):
+    """Relative L2 per sequence, each run at its own length (no padding).
+
+    `mixed_lengths.npz` is zero-padded to 10000 with an explicit `length`; the
+    models are causal, but running the padded tensor would still cost the full
+    10000 steps and would hide variable-length behaviour, so each sequence is
+    cut to its true length.
+    """
+    errs = []
+    for i in range(len(ds)):
+        n = int(ds.length[i])
+        f = ds.f[i:i + 1, :n].to(device)
+        y = ds.y[i:i + 1, :n].to(device)
+        yh = model(f, ds.alpha[i:i + 1].to(device), ds.alpha_id[i:i + 1].to(device))
+        errs.append(float(rel_l2(yh, y).cpu()))
+    return np.asarray(errs), ds.length.astype(int)
 
 
 @torch.no_grad()
@@ -86,11 +123,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--models", default=None, help="comma separated subset")
+    ap.add_argument("--seeds", type=int, default=len(SEEDS),
+                    help="evaluate up to this many seeds of the SEEDED models")
     args = ap.parse_args()
     dev = args.device
     names = args.models.split(",") if args.models else list(SPECS)
 
     report = dict(device=dev, tau=TAU, lam=LAM, L_train=L_TRAIN,
+                  alibi_impl="chunked_q512",     # see models.alibi_attention
                   alphas=list(ALPHAS_TRAIN), models={})
 
     # ---- per-model accuracy / speed / memory vs length --------------------
@@ -169,6 +209,59 @@ def main():
         del model
         torch.cuda.empty_cache()
 
+    # ---- mixed lengths: the literal task spec -----------------------------
+    print("[bench] mixed lengths in [1000, 10000]")
+    mp = path("mixed_lengths.npz")
+    if os.path.exists(mp):
+        mx = SeqData(mp)
+        bins = [(1000, 3000), (3000, 6000), (6000, 10001)]
+        for nm in names:
+            model, _ = load_model(nm, dev)
+            try:
+                errs, lens = accuracy_mixed(model, mx, dev)
+                report["models"][nm]["mixed"] = dict(
+                    n=int(len(errs)), med=float(np.median(errs)),
+                    mean=float(errs.mean()),
+                    by_length={f"{lo}-{hi - 1}": float(np.median(
+                        errs[(lens >= lo) & (lens < hi)])) for lo, hi in bins})
+            except torch.cuda.OutOfMemoryError:
+                torch.cuda.empty_cache()
+                report["models"][nm]["mixed"] = dict(error="OOM")
+            print(f"    {nm}: med {report['models'][nm]['mixed'].get('med')}")
+            del model
+            torch.cuda.empty_cache()
+    else:
+        print("  (no data/mixed_lengths.npz: run `python -m src.datagen`)")
+
+    # ---- extra seeds of the SEEDED models ----------------------------------
+    print("[bench] seeds")
+    for nm in [n for n in names if n in SEEDED]:
+        runs = {}
+        for sd in SEEDS[:args.seeds]:
+            if not os.path.exists(ckpt_path(nm, sd)):
+                continue
+            model, _ = load_model(nm, dev, seed=sd)
+            med_by_L = {}
+            for L in L_SCALING:
+                b = 8 if L <= 4000 else (4 if L <= 7000 else 2)
+                try:
+                    errs, _, _ = accuracy(model, datasets[L], dev, batch=b)
+                    med_by_L[str(L)] = float(np.median(errs))
+                except torch.cuda.OutOfMemoryError:
+                    torch.cuda.empty_cache()
+                    med_by_L[str(L)] = None
+            try:
+                errs, _, _ = accuracy(model, ho, dev, batch=2)
+                ho_med = float(np.median(errs))
+            except torch.cuda.OutOfMemoryError:
+                torch.cuda.empty_cache()
+                ho_med = None
+            runs[str(sd)] = dict(med_by_L=med_by_L, heldout_all_med=ho_med)
+            del model
+            torch.cuda.empty_cache()
+        report["models"][nm]["seed_runs"] = runs
+        print(f"    {nm}: {len(runs)} seed(s)")
+
     # ---- classical references (produced by src.bench_classical) ----------
     cpath = os.path.join(RESULTS, "bench_classical.json")
     if os.path.exists(cpath):
@@ -178,7 +271,7 @@ def main():
         print("  (run `python -m src.bench_classical` for the CPU references)")
 
     with open(os.path.join(RESULTS, "bench.json"), "w") as fh:
-        json.dump(report, fh, indent=2)
+        dump_compact(report, fh)
     print("wrote results/bench.json")
 
 

@@ -1,49 +1,38 @@
-# Learning the fractional relaxation operator
+# Обучение оператора дробной релаксации
 
-Can a sequence model learn the solution operator of
+Может ли модель для последовательностей выучить решающий оператор уравнения
 
 $$D^{\alpha} y(t) \;=\; -\lambda\, y(t) \;+\; f(t), \qquad y(0)=0, \qquad 0<\alpha<1,$$
 
-where $D^{\alpha}$ is the **Caputo** derivative — and if it can, *what does it learn*?
+где $D^{\alpha}$ — производная **Капуто**? И если может, то *что именно она выучивает*?
 
-The project compares three sequence models on this map $f \mapsto y$: a small
-causal **Transformer**, a diagonal **S4D** state-space model, and a model whose
-exponents are **frozen at the nodes of Jiang's sum-of-exponentials formula**.
-They are trained on short sequences, tested on sequences ten times longer, and
-then opened up to see whether the relaxation rates a network discovers by
-gradient descent coincide with the ones numerical analysis prescribes.
+В проекте сравниваются три модели для последовательностей, решающие задачу $f \mapsto y$: небольшой каузальный **Transformer**, диагональная модель пространства состояний **S4D** и модель, у которой **показатели экспонент заморожены в узлах формулы Цзяна** (Jiang) для суммы экспонент. Модели обучаются на коротких последовательностях, тестируются на последовательностях в десять раз длиннее, а затем «вскрываются»: проверяется, совпадают ли скорости релаксации, которые сеть находит градиентным спуском, с теми, которые предписывает численный анализ.
 
 ---
 
-## Quick start
+## Быстрый старт
 
-**1. Environment** (Python 3.11+; developed on 3.14, Windows, RTX 4060 Ti)
+**1. Окружение** (Python 3.11+; разработка велась на 3.14, Windows, RTX 4060 Ti)
 
 ```bash
 python -m venv frac
 ```
 
-Activate it — PowerShell: `.\frac\Scripts\Activate.ps1`,
-cmd: `.\frac\Scripts\activate.bat`, bash/Linux/macOS: `source frac/bin/activate` —
-then:
+Активируйте его — PowerShell: `.\frac\Scripts\Activate.ps1`,
+cmd: `.\frac\Scripts\activate.bat`, bash/Linux/macOS: `source frac/bin/activate` — затем:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-`requirements.txt` pulls the **CUDA** build of torch from the PyTorch index
-(~2.5 GB). On a machine without an NVIDIA GPU, delete the first two
-non-comment lines of that file and `pip install torch` instead; everything
-still runs, just slower (see *Running on CPU* below).
+`requirements.txt` подтягивает **CUDA**-сборку torch из индекса PyTorch (~2,5 ГБ). На машине без GPU от NVIDIA удалите первые две строки файла, не являющиеся комментариями, и выполните `pip install torch`; всё по-прежнему будет работать, только медленнее (см. *Запуск на CPU* ниже).
 
-> **If `python -m venv frac` fails with**
+> **Если `python -m venv frac` завершается с ошибкой**
 > `Unable to copy ...\venvlauncher.exe to ...\frac\Scripts\python.exe`:
-> the venv already exists and a process is running from it, so Windows has
-> `python.exe` locked. Nothing is wrong — skip the step and just activate it.
-> For a deliberate clean rebuild, stop anything using the venv (including
-> Jupyter kernels) and run `python -m venv --clear frac`.
+> виртуальное окружение уже существует, и из него запущен процесс, поэтому Windows заблокировала `python.exe`. Ничего страшного — пропустите этот шаг и просто активируйте окружение.
+> Для намеренной полной пересборки остановите всё, что использует окружение (включая ядра Jupyter), и выполните `python -m venv --clear frac`.
 
-**2. Check the numerics, then build the data** (~1 min, then ~30 s, 82 MB)
+**2. Проверьте численные методы, затем сгенерируйте данные** (~1 мин, затем ~30 с, 82 МБ)
 
 ```bash
 python -m src.validate
@@ -53,10 +42,13 @@ python -m src.validate
 python -m src.datagen
 ```
 
-**3. Train, benchmark, analyse, plot** (~1.5 h on an RTX 4060 Ti)
+**3. Обучение, бенчмарки, анализ, графики** (~2,8 ч на RTX 4060 Ti: 15 конфигураций и ещё два сида для пяти основных моделей; `python -m src.train --all --seeds 1` — только первый сид, ~1,6 ч)
 
-Run these in order (separate commands, so they work the same in PowerShell,
-cmd and bash):
+Выполняйте по порядку (отдельными командами, чтобы они одинаково работали в PowerShell, cmd и bash).
+То же одной командой — `python -m src.pipeline` (опции `--skip train`, `--only validate datagen`): он запускает
+все этапы и **заново пишет** `results/pipeline_log.txt` (дата, версии, команда, код возврата и время каждого этапа),
+так что лог не может описывать более старый запуск, чем лежащие рядом результаты. Быстрая проверка кода на CPU:
+`python -m src.selftest` (каузальность всех моделей, блочный ALiBi против полной матрицы, LS-инициализация).
 
 ```bash
 python -m src.train --all
@@ -86,228 +78,193 @@ python -m src.figures
 python -m src.report
 ```
 
-Figures land in `results/`, tables in `results/tables.md`.
+Рисунки сохраняются в `results/`, таблицы — в `results/tables.md`.
 
-**4. Or just read the notebooks**
+**4. Или просто почитайте ноутбуки**
 
 ```bash
 jupyter notebook notebooks/
 ```
 
-`01_theory_and_data.ipynb` derives the operator and validates the solver and
-Jiang's rule — it needs only step 2. `02_results.ipynb` renders every table and
-figure from the saved json and needs step 3 (or the committed `results/`).
+`01_theory_and_data.ipynb` выводит оператор и проверяет решатель и правило Цзяна — ему нужен только шаг 2. `02_results.ipynb` строит все таблицы и рисунки из сохранённых json-файлов и требует шага 3 (или закоммиченной папки `results/`).
 
-Launched from the activated venv, the default kernel is already the right one.
-The venv is also registered as a named kernel (**Python (fracrelax)**) so the
-notebooks work from any Jupyter; re-register after a rebuild with
+Если запускать из активированного окружения, ядро по умолчанию уже правильное. Окружение также зарегистрировано как именованное ядро (**Python (fracrelax)**), поэтому ноутбуки работают из любого Jupyter; после пересборки окружения зарегистрируйте его заново командой
 
 ```bash
 python -m ipykernel install --user --name fracrelax --display-name "Python (fracrelax)"
 ```
 
-> Run each `python -m src.*` command from the **project root**, not from `src/`.
+> Запускайте каждую команду `python -m src.*` из **корня проекта**, а не из `src/`.
 >
-> `src.bench_classical` and `src.figures` are split out as torch-free modules.
-> In the `frac` venv above that is merely tidy, but in an **Anaconda** environment
-> it is required: torch's `libiomp5md.dll` and Anaconda's MKL cannot both
-> initialise in one process (OMP error #15). Verified both ways on this
-> machine.
+> Модули `src.bench_classical` и `src.figures` выделены как не зависящие от torch. В окружении `frac` выше это лишь аккуратность, но в окружении **Anaconda** это необходимо: `libiomp5md.dll` из torch и MKL из Anaconda не могут инициализироваться в одном процессе (ошибка OMP #15). Проверено обоими способами на этой машине.
 
-**Running on CPU.** Everything works, but `src.train --all` goes from ~1.5 h to
-the better part of a day. To sample the pipeline instead, cut the budget:
-`python -m src.train --model soe_jiang --steps 4000`, then
-`python -m src.bench --models soe_jiang --device cpu`. The numerics
-(`src.validate`), the data generation and both notebooks never touch the GPU.
+**Запуск на CPU.** Всё работает, но `src.train --all` вместо ~1,5 ч занимает большую часть суток. Чтобы лишь опробовать конвейер, урежьте бюджет: `python -m src.train --model soe_jiang --steps 4000`, затем `python -m src.bench --models soe_jiang --device cpu`. Численные методы (`src.validate`), генерация данных и оба ноутбука никогда не обращаются к GPU.
 
-**Skipping training.** `results/` is committed, so `python -m src.figures` and
-`python -m src.report` reproduce every figure and table in this README without
-re-running anything.
+**Пропуск обучения.** Папка `results/` закоммичена, поэтому `python -m src.figures` и `python -m src.report` воспроизводят все рисунки и таблицы из этого README без повторного запуска остального.
 
 ---
 
-## 1. Why this operator is the right test case
+## 1. Почему этот оператор — правильный тестовый пример
 
-With $y(0)=0$ the map is a causal convolution,
+При $y(0)=0$ отображение является каузальной сверткой,
 
 $$y(t)=\int_0^t K(t-r)\,f(r)\,dr, \qquad K(t)=t^{\alpha-1}E_{\alpha,\alpha}(-\lambda t^{\alpha}), \qquad \hat K(p)=\frac{1}{p^{\alpha}+\lambda}.$$
 
-$\hat K$ is a Stieltjes function, so $K$ is completely monotone and has an exact
-representation as a **continuous superposition of exponentials**
+$\hat K$ — функция Стилтьеса, поэтому $K$ вполне монотонна и допускает точное представление в виде **непрерывной суперпозиции экспонент**
 
 $$K(t)=\int_0^{\infty} e^{-st}\,\mu(s)\,ds, \qquad
 \mu(s)=\frac{1}{\pi}\cdot\frac{s^{\alpha}\sin(\pi\alpha)}{s^{2\alpha}+2\lambda s^{\alpha}\cos(\pi\alpha)+\lambda^{2}}.$$
 
-The two limits of $\mu$ give the two power laws
+Два предельных случая $\mu$ дают два степенных закона:
 
 $$K(t)\sim \frac{t^{\alpha-1}}{\Gamma(\alpha)}\ (t\to 0), \qquad\qquad
 K(t)\sim \frac{\alpha}{\Gamma(1-\alpha)\,\lambda^{2}}\,t^{-1-\alpha}\ (t\to\infty).$$
 
-So the memory is **algebraic, never exponential**: there is no single time
-constant, and no finite context window is ever "enough". That is what makes the
-train-short/test-long question sharp, and it is why the problem has a clean
-theoretical answer to compare a network against.
+Итак, память **алгебраическая, а не экспоненциальная**: нет единой постоянной времени, и никакого конечного окна контекста никогда не бывает «достаточно». Именно поэтому вопрос «обучение на коротких — тест на длинных» стоит остро, и именно поэтому у задачи есть чистый теоретический ответ, с которым можно сравнивать сеть.
 
-**The bridge to sequence models.** Discretising the $s$-integral turns one node
-$s_j$ into one first-order mode $h_j' = -s_j h_j + f$ — that is, one state of a
-diagonal SSM with pole $A_j=e^{-s_j\tau}$. Choosing good nodes is exactly what
-**Jiang's formula** does, and learning poles is exactly what **S4D** does. The
-two are the same object, so they can be compared directly (figure 1).
+**Мост к моделям последовательностей.** Дискретизация $s$-интеграла превращает один узел $s_j$ в одну моду первого порядка $h_j' = -s_j h_j + f$ — то есть в одно состояние диагональной SSM с полюсом $A_j=e^{-s_j\tau}$. Выбор хороших узлов — это в точности то, что делает **формула Цзяна**, а обучение полюсов — это в точности то, что делает **S4D**. Это один и тот же объект, поэтому их можно сравнивать напрямую (рисунок 1).
 
-### Jiang's formula
+### Формула Цзяна
 
-[Jiang, Zhang, Zhang & Zhang, *Commun. Comput. Phys.* **21**(3) 650–678
-(2017)](https://doi.org/10.4208/cicp.OA-2016-0136). For $0<\beta<1$,
+[Jiang, Zhang, Zhang & Zhang, *Commun. Comput. Phys.* **21**(3) 650–678 (2017)](https://doi.org/10.4208/cicp.OA-2016-0136). Для $0<\beta<1$
 
 $$t^{-\beta}=\frac{1}{\Gamma(\beta)}\int_0^{\infty}e^{-st}s^{\beta-1}\,ds
 \;\approx\;\sum_{j=1}^{N_{\exp}} w_j e^{-s_j t},\qquad t\in[\tau,T],$$
 
-the quadrature being Gauss–Jacobi with weight $s^{\beta-1}$ on $[0,s_{\min}]$
-(absorbing the singularity exactly), Gauss–Legendre on geometric panels up to
-$s_{\max}$, and truncation beyond. The node count is
+где квадратура — это Гаусс–Якоби с весом $s^{\beta-1}$ на $[0,s_{\min}]$ (точно учитывает особенность), Гаусс–Лежандр на геометрических панелях вплоть до $s_{\max}$ и отбрасывание хвоста за ним. Число узлов равно
 $N_{\exp}=O\!\big(\log\tfrac1\varepsilon \cdot \log\tfrac{T}{\tau}\big)$ —
-**logarithmic in the dynamic range**, which is why 64 exponentials cover four
-decades of time to roughly $10^{-9}$ (`src/jiang.py`, verified in
-`src/validate.py`). Here the kernel exponent is $\beta=1-\alpha$.
+**логарифм динамического диапазона**, поэтому 64 экспоненты покрывают четыре десятичных порядка времени с точностью порядка $10^{-9}$ (`src/jiang.py`, проверено в `src/validate.py`). Здесь показатель ядра равен $\beta=1-\alpha$.
 
 ---
 
-## 2. Ground truth: the L1 scheme
+## 2. Эталонное решение: схема L1
 
-On a uniform grid $t_n=n\tau$ the L1 approximation of the Caputo derivative is
+На равномерной сетке $t_n=n\tau$ аппроксимация L1 производной Капуто имеет вид
 
 $$D^{\alpha}y(t_n)\approx\frac{\tau^{-\alpha}}{\Gamma(2-\alpha)}\sum_{k=0}^{n-1}b_k\,(y_{n-k}-y_{n-k-1}),\qquad b_k=(k+1)^{1-\alpha}-k^{1-\alpha},$$
 
-which rearranges into the explicit, unconditionally positive recursion used in
-`src/l1.py`:
+которая преобразуется в явную, безусловно положительную рекурсию, используемую в `src/l1.py`:
 
 $$(1+\mu\lambda)\,y_n=\sum_{m=1}^{n-1} d_m\,y_{n-m}+b_{n-1}y_0+\mu f_n,
 \qquad \mu=\tau^{\alpha}\Gamma(2-\alpha),\quad d_m=b_{m-1}-b_m>0,$$
 
-with $\sum_{m=1}^{n-1}d_m+b_{n-1}=1$.
+при этом $\sum_{m=1}^{n-1}d_m+b_{n-1}=1$.
 
-**Validation** (`python -m src.validate`, full output in
-`results/validation.json`). `src/exact.py` computes references from the spectral
-representation above and never touches the L1 scheme, so the agreement is
-meaningful:
+**Валидация** (`python -m src.validate`, полный вывод в `results/validation.json`). Модуль `src/exact.py` вычисляет эталоны из спектрального представления выше и никогда не обращается к схеме L1, так что согласие содержательно:
 
-| check | result |
+| проверка | результат |
 |---|---|
-| $\int \mu(s)/(p+s)\,ds = 1/(p^{\alpha}+\lambda)$ | max rel. err. $3.6\times10^{-16}$ |
-| L1 vs exact step response ($f\equiv1$, $\alpha=0.5$) | converges, observed order $1.00$ |
-| L1 recursion vs FFT convolution (LTI property) | $5.0\times10^{-16}$ |
-| L1 impulse response $g[n]$ vs exact $K(n\tau)$ | $+70\%$ at $t=\tau$, $6\times10^{-4}$ at $t=24$ |
-| Jiang rule for $t^{-\beta}$, $T/\tau=10^4$, $\varepsilon=10^{-6}$ | 160 nodes, achieved $9.6\times10^{-7}$ |
-| 64 Jiang nodes + LS weights vs the L1 kernel | $\le 2\times10^{-8}$ relative, every $\alpha$ |
+| $\int \mu(s)/(p+s)\,ds = 1/(p^{\alpha}+\lambda)$ | макс. отн. ошибка $3.6\times10^{-16}$ |
+| L1 против точного отклика на ступеньку ($f\equiv1$, $\alpha=0.5$) | сходится, наблюдаемый порядок $1.00$ |
+| рекурсия L1 против FFT-свёртки (свойство LTI) | $5.0\times10^{-16}$ |
+| импульсный отклик L1 $g[n]$ против точного $K(n\tau)$ | $+70\%$ при $t=\tau$; $7.6\%$ при $t=0.1$; $1.5\%$ при $t=0.7$; $0.1\%$ лишь к $t\approx12$; $6\times10^{-4}$ при $t=24$ |
+| правило Цзяна для $t^{-\beta}$, $T/\tau=10^4$, $\varepsilon=10^{-6}$ | минимальное правило из семейства: 59–73 узла (достигнуто $\le10^{-6}$); фиксированные параметры (`n_jacobi=16`, `n_leg=8`, `ratio=2`) дают 160–168 узлов, **независимо от $\varepsilon$** |
+| 64 узла Цзяна + веса МНК против ядра L1 | $\le 2\times10^{-8}$ относительно, для каждого $\alpha$ |
 
-The last two rows matter for the whole study. The $+70\%$ deviation at the very
-first step is *correct*: $K$ has an integrable singularity at $t=0$ that no
-one-step scheme resolves. **The L1 solution is the ground truth the models are
-trained against**, so this is a property of the target, not an error in it.
+Последние две строки важны для всего исследования, и их нужно читать аккуратно.
 
-Because $y(0)=0$ makes the scheme exactly linear and time-invariant, the whole
-dataset could be generated by FFT convolution with the scheme's own impulse
-response — $O(L\log L)$ instead of $O(L^2)$, verified to $5\times10^{-16}$
-against the direct recursion.
+*О числе узлов.* Прежняя версия таблицы приводила число узлов правила с жёстко зафиксированными параметрами — оно почти не зависит от $\varepsilon$ (144–168 узлов от $10^{-2}$ до $10^{-8}$) и поэтому завышено в 2–6 раз. Теперь `jiang.soe_power_min_nodes` ищет в том же семействе (хвост, знаменатель панелей, порядки Гаусса) самое дешёвое правило с *измеренной* ошибкой $\le\varepsilon$; `validation.json` хранит оба числа (`n_exp_fixed_rule`, `n_exp_min`). Для $\alpha=0.5$ получается 23 / 44 / 73 / 99 узлов при $\varepsilon=10^{-2}/10^{-4}/10^{-6}/10^{-8}$.
+
+**Что именно является эталоном.** Относительно исходного уравнения отклонение L1 от точного ядра — это **ошибка дискретизации**, и она не ограничивается первым шагом. У $K$ в точке $t=0$ интегрируемая особенность, которую не разрешает схема с шагом $\tau=0.01$: отклонение составляет $+70\%$ при $t=\tau$, $7.6\%$ при $t=0.1$, $1.5\%$ при $t=0.7$ и опускается до $0.1\%$ лишь к $t\approx12$. Модели при этом обучаются на **оператор L1** и воспроизводят его с ошибкой порядка $10^{-3}$ относительно L1.
+
+Отсюда следует, что **все выводы о точности моделей относятся к L1-оператору, а не к самому уравнению**. Для этого исследования это допустимо (L1 — вполне определённая линейная цель, и вопрос «что выучивает модель» корректно ставится именно для неё), но это нужно держать в уме при интерпретации результатов. Если нужны выводы о самом уравнении, данные следует генерировать на сетке в 10 раз мельче ($\tau/10$) и затем прореживать до $\tau$.
+
+Поскольку $y(0)=0$ делает схему строго линейной и инвариантной ко времени, весь датасет можно было сгенерировать FFT-свёрткой с собственным импульсным откликом схемы — $O(L\log L)$ вместо $O(L^2)$, проверено с точностью $5\times10^{-16}$ относительно прямой рекурсии.
 
 ---
 
-## 3. Data (task 1)
+## 3. Данные (задача 1)
 
-`python -m src.datagen` → `data/*.npz` (~82 MB, git-ignored; `data/demo_small.npz`
-is committed).
+`python -m src.datagen` → `data/*.npz` (~82 МБ, в git-ignore; `data/demo_small.npz` закоммичен).
 
-* $\tau=0.01$ is **fixed** and $\lambda=1$. A longer sequence therefore means a
-  longer *physical horizon* $T=L\tau$ and more memory to resolve — "train short,
-  test long" is a statement about the kernel, not a change of units.
-* $\alpha\in\{0.2,0.3,\dots,0.9\}$ for training; $\{0.25,0.55,0.85\}$ held out.
-* Eight forcing families with **length-independent statistics** (rates and
-  frequencies in physical units, not per-window): `white`, `ou`, `smooth`,
-  `steps`, `bursts`, `chirp`, `ramp_noise`, `mix`. $f$ is normalised to unit RMS
-  per trajectory; the resulting $y$ has RMS 0.41–0.55 across $\alpha$.
+* $\tau=0.01$ **фиксировано**, $\lambda=1$. Поэтому более длинная последовательность означает более длинный *физический горизонт* $T=L\tau$ и больше памяти, которую нужно разрешить: «обучение на коротких — тест на длинных» — это утверждение о ядре, а не о смене единиц измерения.
+* $\alpha\in\{0.2,0.3,\dots,0.9\}$ для обучения; $\{0.25,0.55,0.85\}$ отложены для проверки.
+* Восемь семейств воздействий со **статистикой, не зависящей от длины** (скорости и частоты заданы в физических единицах, а не на окно): `white`, `ou`, `smooth`,
+  `steps`, `bursts`, `chirp`, `ramp_noise`, `mix`. $f$ нормируется на единичное СКЗ для каждой траектории; получающееся $y$ имеет СКЗ 0,41–0,55 по всем $\alpha$.
 
-| file | contents |
+| файл | содержимое |
 |---|---|
-| `train_L1000.npz` / `val_L1000.npz` / `test_L1000.npz` | 3200 / 400 / 512 sequences, $L=1000$ |
-| `test_L10000.npz` | 384 sequences, $L=10000$ — the long-sequence test set |
-| `scale_L{1000,2000,4000,7000,10000}.npz` | 128 each, for the scaling sweep |
-| `heldout_alpha_L10000.npz` | 96 sequences at unseen $\alpha$ |
-| `mixed_lengths.npz` | 240 sequences of **random length in [1000, 10000]** (the literal task spec), zero-padded with an explicit `length` array |
-| `kernels_L10000.npz` | the exact L1 impulse response per $\alpha$ |
+| `train_L1000.npz` / `val_L1000.npz` / `test_L1000.npz` | 3200 / 400 / 512 последовательностей, $L=1000$ |
+| `test_L10000.npz` | 384 последовательности, $L=10000$ — тестовый набор с длинными последовательностями |
+| `scale_L{1000,2000,4000,7000,10000}.npz` | по 128 штук, для проверки масштабирования |
+| `heldout_alpha_L10000.npz` | 96 последовательностей с невиданными $\alpha$ |
+| `mixed_lengths.npz` | 240 последовательностей **случайной длины из [1000, 10000]** (буквальное условие задачи), дополненных нулями, с явным массивом `length`; используется в `src.bench` (каждая последовательность прогоняется на своей длине без дополнения), результат — таблица «Variable-length sequences» в `results/tables.md` |
+| `kernels_L10000.npz` | точный импульсный отклик L1 для каждого $\alpha$ |
 
 ---
 
-## 4. Models (task 2)
+## 4. Модели (задача 2)
 
-All four are strictly causal (verified by perturbing the last input and checking
-that earlier outputs do not move), take $(f,\alpha)$, and use the same
-zero-order-hold convention $A=e^{-s\tau}$, $B=(1-A)/s$ — so a learned rate $s_j$
-and a Jiang node $s_j$ are the *same kind of object*, a relaxation rate in
-1/time, and can be plotted on one axis.
+Все четыре строго каузальны (проверено: возмущаем последний вход и убеждаемся, что более ранние выходы не меняются), принимают $(f,\alpha)$ и используют одно и то же соглашение об удержании нулевого порядка $A=e^{-s\tau}$, $B=(1-A)/s$ — поэтому выученная скорость $s_j$ и узел Цзяна $s_j$ являются *объектами одного рода*, скоростью релаксации в 1/время, и их можно изобразить на одной оси.
 
-| model | what is learned | params |
+| модель | что обучается | параметры |
 |---|---|---|
-| **`soe_jiang`** — fixed exponents | 64 poles **frozen** at Jiang nodes; only the readout $c_j(\alpha)$ trains | 3,296 |
-| **`s4d_lin_*`** — same architecture, learned poles | $c_j(\alpha)$ **and** the 64 rates; three initialisations (`log`, `lin`, `narrow`) and two rate parameterisations | 3,360 |
-| **`s4d_deep`** — the S4D entry | 2 blocks of [pre-norm → diagonal SSM (64 states × 64 channels) → GELU → MLP], residual, FiLM conditioning on $\alpha$ | 68,129 |
-| **`transformer_*`** — the Transformer entry | 2 layers, 4 heads, $d_{\text{model}}=64$, causal; `rope` / `nope` / `alibi` | 76,577 |
+| **`soe_jiang`** — фиксированные показатели | 64 полюса **заморожены** в узлах Цзяна; обучается только считывание $c_j(\alpha)$ | 3 296 |
+| **`soe_jiang_lsinit`** — то же, считывание стартует с МНК-решения | узлы Цзяна заморожены; $c_j(\alpha)$ инициализируется весами метода наименьших квадратов по точному ядру L1 (`src/lsinit.py`), затем дообучается; шаг 0 — кандидат в лучший чекпойнт | 3 296 |
+| **`s4d_lin_log_lsinit`** — обучаемые полюса + МНК-старт считывания | то же для `s4d_lin_log`; МНК-веса подогнаны только по ядру горизонта обучения ($L=1000$) | 3 360 |
+| **`s4d_lin_*`** — та же архитектура, обучаемые полюса | $c_j(\alpha)$ **и** 64 скорости; три инициализации (`log`, `lin`, `narrow`) и две параметризации скоростей | 3 360 |
+| **`s4d_deep`** — вариант S4D | 2 блока [pre-norm → диагональная SSM (64 состояния × 64 канала) → GELU → MLP], остаточные связи, FiLM-кондиционирование по $\alpha$ | 68 129 |
+| **`transformer_*`** — вариант Transformer | 2 слоя, 4 головы, $d_{\text{model}}=64$, каузальный; `rope` / `nope` / `alibi` | 76 577 |
 
-`s4d_lin_*` is deliberately the *same hypothesis class* as `soe_jiang` with the
-same budget — only the pole locations differ. That is what makes question 5
-answerable rather than confounded by architecture.
+`s4d_lin_*` намеренно представляет *тот же класс гипотез*, что и `soe_jiang`, с тем же бюджетом — отличается только расположение полюсов. Благодаря этому на вопрос 5 можно ответить, не смешивая его с влиянием архитектуры.
 
-Two design points worth stating, because they are the obvious objections:
+**Зачем МНК-инициализация.** Узлы Цзяна с МНК-весами достигают ошибки $\sim3\times10^{-8}$ без всякого обучения (последняя строка таблицы точности), а обученная `soe_jiang` останавливается около $10^{-3}$ — то есть этот пол задаёт оптимизация считывания (Adam на плохо обусловленной задаче), а не архитектура. `soe_jiang_lsinit` стартует прямо из МНК-решения: если обучение его только портит, чекпойнт шага 0 сохранится по правилу «лучший на валидации», и это тоже результат. Для MLP-считывания последний линейный слой подбирается МНК так, чтобы совпадать с $c(\alpha_i)$ на восьми обучающих $\alpha$ (точная интерполяция), поведение между ними определяется эмбеддингом и дообучением.
 
-* **The band is a prior.** `soe_jiang` is built for the deployment horizon
-  $T=100$, i.e. it is told which rates a 100-second horizon needs. The SSMs are
-  initialised knowing only the *training* horizon, $s\in[1/T_{\text{train}},1/\tau]=[0.1,100]$.
-  The ablation `soe_jiang_trainband` gives the fixed-exponent model the narrow
-  band too, which isolates how much of its advantage is the band prior.
-* **Weight decay is off for every model.** The target is a linear operator whose
-  optimal readout coefficients are $O(1\text{–}30)$; an $L_2$ pull toward zero
-  would penalise exactly the structured models. Over-fitting is controlled by
-  keeping the best-on-validation checkpoint.
+**Сиды.** Пять основных моделей (`transformer_rope`, `s4d_deep`, `soe_jiang`, `s4d_lin_log`, `soe_jiang_lsinit`) обучаются с тремя сидами (`SEEDS` в `config.py`; сид меняет инициализацию и порядок батчей, данные одни и те же). Чекпойнты — `<имя>.pt` (первый сид) и `<имя>_s<сид>.pt`; таблица точности показывает среднее ± СКО по сидам, остальные модели — одиночные прогоны. Всё, что в таблице без разброса, не следует интерпретировать тоньше, чем различия между сидами у родственных моделей.
 
-Training: identical data, 40,000 steps, batch 32, AdamW, cosine schedule, and a
-scale-free loss $\frac1B\sum_b \lVert \hat y_b-y_b\rVert^2/\lVert y_b\rVert^2$
-(needed because $\lVert y \rVert$ varies by an order of magnitude across forcing
-families).
+**Какие модели знают тестовый горизонт.** В таблице точности есть колонка `knows T=100?`. `soe_jiang`, `soe_jiang_table`, `soe_jiang_lsinit` получают узлы из правила Цзяна для $T=100$; модели `*_longtrain` обучаются на последовательностях $L=10^4$; всё остальное, включая `soe_jiang_trainband` (узлы для $T=10$), знает только обучающий горизонт. Сравнивать `soe_jiang` со `s4d_*` и трансформерами без этой оговорки нельзя.
+
+**ALiBi: время и память — свойство реализации.** Исходная реализация строила матрицу смещений целиком, размером $(1,H,L,L)$ — около 1,6 ГБ при $L=10^4$, да ещё с произвольной маской SDPA не может взять flash-ядро. Отсюда 3,8 ГБ и показатель времени 1,75 в прежней таблице: это цена реализации, а не метода. Теперь смещение строится блоками по 512 запросов (`models.alibi_attention`; идентично полной матрице, проверяется в `src.selftest`), память $O(H\cdot512\cdot L)$; вычисления остаются $O(L^2)$ — это уже свойство метода. Числа в `results/tables.md` и рисунке 5 обновятся после повторного запуска `src.bench`; до тех пор таблица помечает строку ALiBi как устаревшую.
+
+Два проектных решения стоит оговорить, потому что это очевидные возражения:
+
+* **Полоса — это априорное знание.** `soe_jiang` построена для горизонта развёртывания $T=100$, то есть ей сообщено, какие скорости нужны для горизонта в 100 секунд. SSM инициализируются, зная лишь *обучающий* горизонт, $s\in[1/T_{\text{train}},1/\tau]=[0.1,100]$. Абляция `soe_jiang_trainband` даёт модели с фиксированными экспонентами тоже узкую полосу, что позволяет выделить, какая доля её преимущества обусловлена априорной полосой.
+* **Weight decay отключён для всех моделей.** Целевой оператор линеен, а оптимальные коэффициенты считывания имеют порядок $O(1\text{–}30)$; $L_2$-притяжение к нулю штрафовало бы именно структурированные модели. Переобучение контролируется выбором чекпойнта, лучшего на валидации.
+
+Размер файлов результатов: `bench.json` и `analysis.json` пишутся одной строкой без отступов, числа округляются до 6 значащих цифр (`src/jsonio.py`): было по 2,3 МБ и 68–80 тыс. строк, стало ~0,7 МБ и одна строка — в diff их по-прежнему не читать, зато они не раздувают его. Для чтения есть `tables.md`, рисунки и `python -m json.tool`. Если и это много, массивы ошибок по позициям можно вынести в `.npz` или не коммитить: они воспроизводятся.
+
+Обучение: одинаковые данные, 40 000 шагов, батч 32, AdamW, косинусное расписание и масштабно-инвариантная функция потерь $\frac1B\sum_b \lVert \hat y_b-y_b\rVert^2/\lVert y_b\rVert^2$ (необходима, поскольку $\lVert y \rVert$ различается на порядок между семействами воздействий).
 
 ---
 
-## 5. Repository
+## 5. Репозиторий
 
 ```
-README.md          this file — problem formulation and results
+README.md          этот файл — постановка задачи и результаты
 notebooks/
-  01_theory_and_data.ipynb   the operator, solver validation, Jiang's rule, the data
-  02_results.ipynb           every table and figure, from the saved json
+  01_theory_and_data.ipynb   оператор, валидация решателя, правило Цзяна, данные
+  02_results.ipynb           все таблицы и рисунки из сохранённых json
 src/
-  l1.py          L1 scheme (direct recursion + the LTI/FFT shortcut)
-  exact.py       spectral representation: exact kernel, step response, Mittag-Leffler
-  jiang.py       Jiang's composite Gauss rule, SOE fitting and application
-  bands.py       relaxation-rate bands and the cached node set (torch-free)
-  datagen.py     dataset generation
+  l1.py          схема L1 (прямая рекурсия + быстрый путь через LTI/FFT)
+  exact.py       спектральное представление: точное ядро, отклик на ступеньку, функция Миттаг-Леффлера
+  jiang.py       составное правило Гаусса Цзяна, подгонка и применение SOE
+  bands.py       полосы скоростей релаксации и кэшированный набор узлов (без torch)
+  datagen.py     генерация датасета
   models.py      SOEFixed, S4DLinear, S4D, TinyTransformer
-  registry.py    the 11 trained configurations
+  registry.py    15 обучаемых конфигураций
+  lsinit.py      МНК-инициализация считывания (soe_jiang_lsinit, s4d_lin_log_lsinit)
+  jsonio.py      компактная запись json (без отступов, 6 значащих цифр)
+  selftest.py    быстрые проверки на CPU (каузальность, ALiBi, LS-init)
+  pipeline.py    запуск всех этапов + свежий results/pipeline_log.txt
   train.py  bench.py  bench_classical.py  analyze.py  analyze_kernels.py
   figures.py  report.py  style.py  validate.py
-data/              .npz datasets (git-ignored except the demo; regenerate below)
-frac/              the virtualenv (git-ignored)
-results/           figures, benchmark json, tables
+data/              датасеты .npz (в git-ignore, кроме демо; регенерация ниже)
+frac/              виртуальное окружение (в git-ignore)
+results/           рисунки, json бенчмарков, таблицы
 ```
 
-What each stage produces (commands in *Quick start* above):
+Что создаёт каждый этап (команды — в разделе *Быстрый старт* выше):
 
-| stage | writes | cost |
+| этап | пишет | стоимость |
 |---|---|---|
-| `src.validate` | `results/validation.json` | ~1 min, CPU |
-| `src.datagen` | `data/*.npz`, 82 MB | ~30 s, CPU |
-| `src.train --all` | `data/checkpoints/*.pt`, `results/train_*.json` | ~1.5 h, GPU |
-| `src.bench_classical` | `results/bench_classical.json` | ~2 min, CPU |
-| `src.bench` | `results/bench.json` | ~10 min, GPU |
-| `src.analyze` + `src.analyze_kernels` | `results/analysis.json` | ~3 min |
-| `src.figures` | `results/fig*.png` | ~2 min, CPU |
-| `src.report` | `results/tables.md` | instant |
+| `src.validate` | `results/validation.json` | ~1 мин, CPU |
+| `src.datagen` | `data/*.npz`, 82 МБ | ~30 с, CPU |
+| `src.train --all` | `data/checkpoints/*.pt`, `results/train_*.json` (в т.ч. `*_s<сид>`) | ~2,8 ч, GPU (`--seeds 1`: ~1,6 ч) |
+| `src.bench_classical` | `results/bench_classical.json` | ~2 мин, CPU |
+| `src.bench` | `results/bench.json` (точность, время, память, `mixed`, `seed_runs`) | ~25 мин, GPU |
+| `src.analyze` + `src.analyze_kernels` | `results/analysis.json` | ~3 мин |
+| `src.figures` | `results/fig*.png` | ~2 мин, CPU |
+| `src.report` | `results/tables.md` | мгновенно |
+| `src.pipeline` | `results/pipeline_log.txt` (перезаписывается) | сумма этапов |
 
 ---

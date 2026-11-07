@@ -22,10 +22,14 @@ ALPHA_REF = 0.55             # mid-range order used to build the shared grid
 
 # the three models the task asks for, and the variants/ablations around them
 MAIN3 = ("transformer_rope", "s4d_deep", "soe_jiang")
+# models trained with 3 seeds (the three task models, the same-budget learned-pole
+# control, and the least-squares-initialised readout); the rest are single runs
+SEEDED = MAIN3 + ("s4d_lin_log", "soe_jiang_lsinit")
 ABLATIONS = ("transformer_nope", "transformer_alibi", "s4d_lin_log",
              "s4d_lin_linear", "s4d_lin_narrow", "s4d_lin_softplus",
              "s4d_lin_log_longtrain", "s4d_lin_narrow_longtrain",
-             "soe_jiang_table", "soe_jiang_trainband")
+             "soe_jiang_table", "soe_jiang_trainband",
+             "soe_jiang_lsinit", "s4d_lin_log_lsinit")
 
 
 def jiang_nodes(T: float, n_max: int = N_STATES, alpha_ref: float = ALPHA_REF):

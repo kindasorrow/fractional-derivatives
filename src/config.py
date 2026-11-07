@@ -40,3 +40,12 @@ D_MODEL = 64
 N_STATES = 64  # SSM states per channel / number of fixed exponentials
 
 SEED = 20261022
+# Three training seeds for the headline models.  SEEDS[0] == SEED is the
+# "primary" run (checkpoint `<name>.pt`); the others are `<name>_s<seed>.pt`.
+# The seed changes model init and batch order; the DATA is the same fixed set.
+SEEDS = (SEED, SEED + 1, SEED + 2)
+
+
+def tag(name: str, seed: int = SEED) -> str:
+    """File stem of a (model, seed) run: plain `name` for the primary seed."""
+    return name if seed == SEED else f"{name}_s{seed}"

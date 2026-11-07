@@ -24,6 +24,7 @@ import numpy as np
 import torch
 from scipy import stats
 
+from .jsonio import dump_compact
 from .config import (ALPHAS_TRAIN, LAM, L_LONG, L_TRAIN, N_STATES, RESULTS,
                      TAU)
 from .bench import load_model
@@ -138,7 +139,8 @@ def main(names=None):
     names = names or ["soe_jiang", "soe_jiang_trainband", "soe_jiang_table",
                       "s4d_lin_log", "s4d_lin_linear", "s4d_lin_narrow",
                       "s4d_lin_softplus", "s4d_lin_log_longtrain",
-                      "s4d_lin_narrow_longtrain", "s4d_deep"]
+                      "s4d_lin_narrow_longtrain", "s4d_deep",
+                      "soe_jiang_lsinit", "s4d_lin_log_lsinit"]
     for nm in names:
         print(f"[analyze] {nm}")
         d = extract_rates(nm)
@@ -160,7 +162,7 @@ def main(names=None):
               f"KS vs log-uniform {st.get('ks_vs_loguniform', float('nan')):.3f}")
 
     with open(os.path.join(RESULTS, "analysis.json"), "w") as fh:
-        json.dump(rep, fh, indent=2)
+        dump_compact(rep, fh)
     print("wrote results/analysis.json "
           "(now run `python -m src.analyze_kernels` for the kernel section)")
 

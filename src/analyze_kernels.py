@@ -19,6 +19,7 @@ import os
 
 import numpy as np
 
+from .jsonio import dump_compact
 from . import exact, jiang
 from .bands import jiang_nodes
 from .config import ALPHAS_TRAIN, LAM, L_LONG, N_STATES, RESULTS, TAU
@@ -64,7 +65,8 @@ def main():
         g = discrete_kernel(a, LAM, TAU, L_LONG)
         entry = dict(alpha=float(a), n=n_plot.tolist(),
                      true=(TAU * g[n_plot - 1]).tolist())
-        for nm in ("soe_jiang", "s4d_lin_log", "s4d_lin_linear",
+        for nm in ("soe_jiang", "soe_jiang_lsinit", "s4d_lin_log",
+                   "s4d_lin_log_lsinit", "s4d_lin_linear",
                    "s4d_lin_narrow", "s4d_lin_log_longtrain"):
             d = rep["models"].get(nm)
             if d is None:
@@ -94,7 +96,7 @@ def main():
 
 
     with open(path, "w") as fh:
-        json.dump(rep, fh, indent=2)
+        dump_compact(rep, fh)
     print("wrote results/analysis.json (kernels + spectral added)")
 
 

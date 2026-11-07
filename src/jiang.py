@@ -142,6 +142,38 @@ def soe_power_budget(beta: float, tau: float, T: float, n_max: int,
     return best
 
 
+def soe_power_min_nodes(beta: float, tau: float, T: float, eps: float,
+                        n_cap: int = 400):
+    """Smallest Jiang rule for t^{-beta} on [tau, T] with MEASURED error <= eps.
+
+    `soe_power` with its default (n_jacobi=16, n_leg=8, ratio=2) is a fixed,
+    conservative rule: its node count is an upper bound, not the minimum.
+    This searches the same family (tail eps, panel ratio, Gauss orders) for the
+    cheapest rule that actually reaches `eps`, so the reported N_exp is not
+    inflated by the fixed parameters.  Returns a dict with the rule and (s, w),
+    or None if nothing within `n_cap` nodes reaches eps.
+    """
+    best = None
+    for eps_tail in (eps * 0.01, eps * 0.1, eps, 10 * eps):
+        for ratio in (2.0, 3.0, 4.0, 6.0, 8.0, 12.0):
+            for n_leg in (2, 3, 4, 5, 6, 8, 10, 12):
+                for n_jacobi in (2, 3, 4, 6, 8, 12, 16):
+                    try:
+                        s, w = soe_power(beta, tau, T, min(eps_tail, 0.5),
+                                         n_jacobi, n_leg, ratio)
+                    except ValueError:
+                        continue
+                    n = int(s.size)
+                    if n > n_cap or (best is not None and n >= best["n_exp"]):
+                        continue
+                    err, _, _ = soe_power_error(beta, s, w, tau, T)
+                    if err <= eps:
+                        best = dict(n_exp=n, err=err, eps_tail=eps_tail,
+                                    ratio=ratio, n_leg=n_leg,
+                                    n_jacobi=n_jacobi, s=s, w=w)
+    return best
+
+
 def nodes_for_alpha(alpha: float, tau: float, T: float, n_max: int):
     """Jiang nodes for the relaxation kernel of order `alpha`.
 

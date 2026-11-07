@@ -185,7 +185,9 @@ def fig_training():
     runs = {}
     for p in glob.glob(F("train_*.json")):
         d = json.load(open(p))
-        if "history" in d and len(d["history"]) > 3:
+        # only the primary seed (train_<name>.json); extra seeds are train_<name>_s<seed>.json
+        if (isinstance(d, dict) and "history" in d and len(d["history"]) > 3
+                and d.get("tag", d["name"]) == d["name"]):
             runs[d["name"]] = d
     if not runs:
         print("    (skip: no training logs)")

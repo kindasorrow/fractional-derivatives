@@ -21,6 +21,7 @@ import time
 
 import numpy as np
 
+from .jsonio import dump_compact
 from . import jiang
 from .bands import T_LONG, jiang_nodes
 from .config import LAM, L_SCALING, N_STATES, RESULTS, TAU
@@ -108,7 +109,7 @@ def main():
     out["classical_extended"] = classical_bench(
         lengths=(1000, 2000, 4000, 8000, 16000, 32000, 64000), reps=2)
     with open(os.path.join(RESULTS, "bench_classical.json"), "w") as fh:
-        json.dump(out, fh, indent=2)
+        dump_compact(out, fh)
     print("wrote results/bench_classical.json")
 
 

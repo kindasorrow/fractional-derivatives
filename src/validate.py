@@ -13,6 +13,7 @@ import numpy as np
 
 from . import exact, jiang
 from .config import LAM, RESULTS, TAU
+from .jsonio import dump_compact
 from .l1 import discrete_kernel, l1_solve, l1_solve_fft
 
 
@@ -57,15 +58,32 @@ def check_discrete_kernel(alpha=0.5, lam=LAM, tau=TAU, L=10000):
 
 
 def check_jiang(tau=TAU, T=100.0):
+    """Node count of Jiang's rule for t^{-beta} on [tau, T].
+
+    Two numbers per (alpha, eps):
+      n_exp_fixed_rule : the default rule (n_jacobi=16, n_leg=8, ratio=2).  Its
+                         parameters do not depend on eps, so this count is an
+                         UPPER bound and is flat (~150-170) across eps.
+      n_exp_min        : the smallest rule in the same family whose measured
+                         error is <= eps (`jiang.soe_power_min_nodes`).  This is
+                         the honest N_exp(eps) to compare against O(log 1/eps).
+    """
     rows = []
     for alpha in (0.2, 0.5, 0.9):
         beta = 1.0 - alpha
-        for eps in (1e-2, 1e-4, 1e-6, 1e-8, 1e-10):
+        for eps in (1e-2, 1e-4, 1e-6, 1e-8):
             s, w = jiang.soe_power(beta, tau, T, eps=eps, n_jacobi=16, n_leg=8)
             err, _, _ = jiang.soe_power_error(beta, s, w, tau, T)
-            rows.append(dict(alpha=alpha, beta=beta, eps=eps, n_exp=int(s.size),
-                             max_rel_err=err,
-                             s_min=float(s.min()), s_max=float(s.max())))
+            best = jiang.soe_power_min_nodes(beta, tau, T, eps)
+            rows.append(dict(
+                alpha=alpha, beta=beta, eps=eps,
+                n_exp_fixed_rule=int(s.size), max_rel_err_fixed_rule=err,
+                n_exp_min=None if best is None else best["n_exp"],
+                max_rel_err_min=None if best is None else best["err"],
+                rule_min=None if best is None else dict(
+                    eps_tail=best["eps_tail"], ratio=best["ratio"],
+                    n_leg=best["n_leg"], n_jacobi=best["n_jacobi"]),
+                s_min=float(s.min()), s_max=float(s.max())))
     return rows
 
 
@@ -116,8 +134,10 @@ def main():
     print("[5] Jiang rule for t^-beta on [tau, T] = [0.01, 100]")
     rep["jiang_power"] = check_jiang()
     for r in rep["jiang_power"]:
-        print(f"    a={r['alpha']} eps={r['eps']:.0e}  n_exp={r['n_exp']:4d}  "
-              f"err={r['max_rel_err']:.2e}  s in [{r['s_min']:.2e},{r['s_max']:.2e}]")
+        print(f"    a={r['alpha']} eps={r['eps']:.0e}  "
+              f"fixed-rule n_exp={r['n_exp_fixed_rule']:4d}  "
+              f"minimal n_exp={r['n_exp_min']}  "
+              f"(err {r['max_rel_err_min']:.2e})")
 
     print("[6] Jiang nodes (<=64) + LS weights vs discrete kernel")
     rep["soe_fit"] = check_soe_fit()
@@ -128,7 +148,7 @@ def main():
               f"kernel_med={r['kernel_med_rel_err']:.2e}")
 
     with open(os.path.join(RESULTS, "validation.json"), "w") as fh:
-        json.dump(rep, fh, indent=2)
+        dump_compact(rep, fh)
     print(f"\nwrote {os.path.join(RESULTS, 'validation.json')}")
 
 
