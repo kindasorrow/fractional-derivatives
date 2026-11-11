@@ -1,0 +1,250 @@
+  classical L=  1000  l1_direct      5.1 ms  l1_fft   0.50 ms  soe   0.82 ms  soe relL2 4.74e-11
+  classical L=  2000  l1_direct     10.6 ms  l1_fft   0.30 ms  soe   1.39 ms  soe relL2 6.49e-11
+  classical L=  4000  l1_direct     20.5 ms  l1_fft   0.27 ms  soe   1.66 ms  soe relL2 5.66e-11
+  classical L=  7000  l1_direct     36.3 ms  l1_fft   0.43 ms  soe   2.54 ms  soe relL2 5.82e-11
+  classical L= 10000  l1_direct     53.5 ms  l1_fft   0.51 ms  soe   3.35 ms  soe relL2 4.10e-11
+  soe_ls  L=  1000  med relL2 3.087e-08
+  soe_ls  L=  2000  med relL2 3.226e-08
+  soe_ls  L=  4000  med relL2 3.407e-08
+  soe_ls  L=  7000  med relL2 3.305e-08
+  soe_ls  L= 10000  med relL2 3.216e-08
+extended sweep (scaling exponents only)
+  classical L=  1000  l1_direct      4.9 ms  l1_fft   0.18 ms  soe   0.80 ms  soe relL2 4.74e-11
+  classical L=  2000  l1_direct      9.9 ms  l1_fft   0.23 ms  soe   1.20 ms  soe relL2 6.49e-11
+  classical L=  4000  l1_direct     20.3 ms  l1_fft   0.29 ms  soe   1.64 ms  soe relL2 5.66e-11
+  classical L=  8000  l1_direct     42.0 ms  l1_fft   0.43 ms  soe   2.78 ms  soe relL2 3.33e-11
+  classical L= 16000  l1_direct    516.7 ms  l1_fft   1.15 ms  soe   5.21 ms  soe relL2 9.09e-11
+  classical L= 32000  l1_direct   1764.2 ms  l1_fft   2.56 ms  soe   9.82 ms  soe relL2 5.52e-11
+  classical L= 64000  l1_direct   4244.8 ms  l1_fft   5.58 ms  soe  18.98 ms  soe relL2 5.56e-10
+wrote results/bench_classical.json
+[bench] soe_jiang
+    L=  1000  relL2 med 9.1134e-04  0.8206666655799685
+    L=  2000  relL2 med 2.3060e-03  0.8751999994274229
+    L=  4000  relL2 med 6.2403e-03  0.9559749996697064
+    L=  7000  relL2 med 1.3735e-02  0.9679624999989755
+    L= 10000  relL2 med 1.6075e-02  0.8991200011223555
+[bench] soe_jiang_trainband
+    L=  1000  relL2 med 4.7423e-04  0.9719500012579374
+    L=  2000  relL2 med 1.6818e-03  0.97799166784777
+    L=  4000  relL2 med 6.3405e-03  1.0337999992771074
+    L=  7000  relL2 med 1.5638e-02  0.9587625027052127
+    L= 10000  relL2 med 1.8772e-02  0.8492200053296983
+[bench] soe_jiang_table
+    L=  1000  relL2 med 7.0944e-04  0.6565333339191662
+    L=  2000  relL2 med 4.3119e-03  0.6196833322367942
+    L=  4000  relL2 med 1.5884e-02  0.5645624987664632
+    L=  7000  relL2 med 3.3155e-02  0.6312500008789357
+    L= 10000  relL2 med 3.9303e-02  0.6734199996571988
+[bench] s4d_lin_log
+    L=  1000  relL2 med 6.1819e-04  0.9432500010007061
+    L=  2000  relL2 med 1.7459e-03  0.9960416646208614
+    L=  4000  relL2 med 3.8701e-03  0.9092750005947892
+    L=  7000  relL2 med 5.3798e-03  1.0937875013041776
+    L= 10000  relL2 med 5.4340e-03  1.0695000004488975
+[bench] s4d_lin_linear
+    L=  1000  relL2 med 8.9366e-04  0.8587666670791805
+    L=  2000  relL2 med 2.4404e-03  0.9628666666685604
+    L=  4000  relL2 med 4.0571e-03  0.9180125016428065
+    L=  7000  relL2 med 5.8078e-03  0.8678249978402164
+    L= 10000  relL2 med 5.5123e-03  0.9776599996257572
+[bench] s4d_lin_narrow
+    L=  1000  relL2 med 8.1958e-04  0.9683833341114223
+    L=  2000  relL2 med 1.9142e-03  0.9778666668959584
+    L=  4000  relL2 med 3.9778e-03  0.871662501594983
+    L=  7000  relL2 med 5.5207e-03  1.007937502436107
+    L= 10000  relL2 med 5.3513e-03  0.9852799994405359
+[bench] s4d_lin_softplus
+    L=  1000  relL2 med 1.7114e-03  1.6618250010651536
+    L=  2000  relL2 med 3.0675e-03  0.9984500017405178
+    L=  4000  relL2 med 6.3281e-03  0.9994749998440966
+    L=  7000  relL2 med 9.6338e-03  1.0412999981781468
+    L= 10000  relL2 med 9.4809e-03  1.024240005062893
+[bench] s4d_lin_log_longtrain
+    L=  1000  relL2 med 9.3055e-04  0.8661333340569399
+    L=  2000  relL2 med 1.1219e-03  0.988749998214189
+    L=  4000  relL2 med 1.4043e-03  1.0117250021721702
+    L=  7000  relL2 med 1.5495e-03  1.0346875023969915
+    L= 10000  relL2 med 1.6744e-03  0.9527399961370975
+[bench] s4d_lin_narrow_longtrain
+    L=  1000  relL2 med 1.3313e-03  0.9994583330505218
+    L=  2000  relL2 med 1.8658e-03  0.9964583344602336
+    L=  4000  relL2 med 2.4072e-03  0.9586125015630387
+    L=  7000  relL2 med 2.5454e-03  1.0342124987801071
+    L= 10000  relL2 med 2.9360e-03  0.982900004601106
+[bench] s4d_deep
+    L=  1000  relL2 med 1.6181e-03  2.8121750001446344
+    L=  2000  relL2 med 3.2105e-03  2.727633334870916
+    L=  4000  relL2 med 1.2254e-02  3.6997124989284202
+    L=  7000  relL2 med 2.7627e-02  4.574124999635387
+    L= 10000  relL2 med 3.9795e-02  5.577739997534081
+[bench] transformer_rope
+    L=  1000  relL2 med 2.3943e-02  2.5501833345818645
+    L=  2000  relL2 med 5.8517e-01  2.677416666604889
+    L=  4000  relL2 med 8.0360e-01  3.4510000004956964
+    L=  7000  relL2 med 8.8431e-01  8.254237498476868
+    L= 10000  relL2 med 9.4027e-01  15.965719998348504
+[bench] transformer_nope
+    L=  1000  relL2 med 1.8145e-01  1.5700333339433807
+    L=  2000  relL2 med 2.4894e-01  1.5942499982581164
+    L=  4000  relL2 med 2.8687e-01  3.1857124995440245
+    L=  7000  relL2 med 4.1161e-01  7.964637501572724
+    L= 10000  relL2 med 4.0820e-01  15.379079995909706
+[bench] transformer_alibi
+    L=  1000  relL2 med 3.5176e-02  2.19887499891532
+    L=  2000  relL2 med 4.0941e-02  4.479350000716901
+    L=  4000  relL2 med 5.1519e-02  18.85604999915813
+    L=  7000  relL2 med 5.4677e-02  54.93713749820017
+    L= 10000  relL2 med 5.4549e-02  110.57253999751993
+[bench] held-out alphas @ L=10000
+    soe_jiang: {0.25: 0.0667046532034874, 0.55: 0.007871600799262524, 0.85: 0.03148281201720238, 'all_med': 0.02435038611292839}
+    soe_jiang_trainband: {0.25: 0.029785919934511185, 0.55: 0.01800682209432125, 0.85: 0.03343310207128525, 'all_med': 0.026172365993261337}
+    soe_jiang_table: {0.25: 0.07860788702964783, 0.55: 0.3816951513290405, 0.85: 0.5048533082008362, 'all_med': 0.2618372440338135}
+    s4d_lin_log: {0.25: 0.026101069524884224, 0.55: 0.009406604804098606, 0.85: 0.00496439915150404, 'all_med': 0.009683524258434772}
+    s4d_lin_linear: {0.25: 0.028104349970817566, 0.55: 0.009791504591703415, 0.85: 0.008147438988089561, 'all_med': 0.010386165231466293}
+    s4d_lin_narrow: {0.25: 0.027042677626013756, 0.55: 0.009577704593539238, 0.85: 0.0034948682878166437, 'all_med': 0.006934001110494137}
+    s4d_lin_softplus: {0.25: 0.027396980673074722, 0.55: 0.009997960180044174, 0.85: 0.005971838254481554, 'all_med': 0.012328711338341236}
+    s4d_lin_log_longtrain: {0.25: 0.0027208207175135612, 0.55: 0.002262081718072295, 0.85: 0.002678005024790764, 'all_med': 0.0023019323125481606}
+    s4d_lin_narrow_longtrain: {0.25: 0.005015216767787933, 0.55: 0.0034270724281668663, 0.85: 0.004350293893367052, 'all_med': 0.004127013497054577}
+    s4d_deep: {0.25: 0.032526109367609024, 0.55: 0.04691538214683533, 0.85: 0.03271087631583214, 'all_med': 0.036769598722457886}
+    transformer_rope: {0.25: 0.9490126371383667, 0.55: 0.9283539056777954, 0.85: 0.9192793369293213, 'all_med': 0.9251022338867188}
+    transformer_nope: {0.25: 0.23868435621261597, 0.55: 0.5774217844009399, 0.85: 0.6450213193893433, 'all_med': 0.40209734439849854}
+    transformer_alibi: {0.25: 0.054998815059661865, 0.55: 0.03871957212686539, 0.85: 0.043779708445072174, 'all_med': 0.04515940696001053}
+[bench] per-forcing-family @ L=10000
+    soe_jiang: med 0.012525230646133423
+    soe_jiang_trainband: med 0.019031688570976257
+    soe_jiang_table: med 0.035171084105968475
+    s4d_lin_log: med 0.005972062237560749
+    s4d_lin_linear: med 0.006385629065334797
+    s4d_lin_narrow: med 0.006066907197237015
+    s4d_lin_softplus: med 0.009591671638190746
+    s4d_lin_log_longtrain: med 0.0018085339106619358
+    s4d_lin_narrow_longtrain: med 0.003312575165182352
+    s4d_deep: med 0.03947996348142624
+    transformer_rope: med 0.9224908351898193
+    transformer_nope: med 0.48206573724746704
+    transformer_alibi: med 0.04751370847225189
+wrote results/bench.json
+[analyze] soe_jiang
+    rates: 64  span 1.51e-04..1.16e+03 (6.9 decades), significant 64, per-decade 9.3, KS vs log-uniform 0.183
+[analyze] soe_jiang_trainband
+    rates: 64  span 1.51e-03..1.61e+03 (6.0 decades), significant 64, per-decade 10.6, KS vs log-uniform 0.213
+[analyze] soe_jiang_table
+    rates: 64  span 1.51e-04..1.16e+03 (6.9 decades), significant 64, per-decade 9.3, KS vs log-uniform 0.183
+[analyze] s4d_lin_log
+    rates: 64  span 1.92e-01..2.86e+02 (3.2 decades), significant 64, per-decade 20.2, KS vs log-uniform 0.373
+[analyze] s4d_lin_linear
+    rates: 64  span 2.00e-01..4.24e+02 (3.3 decades), significant 64, per-decade 19.2, KS vs log-uniform 0.596
+[analyze] s4d_lin_narrow
+    rates: 64  span 1.95e-01..2.78e+02 (3.2 decades), significant 64, per-decade 20.3, KS vs log-uniform 0.440
+[analyze] s4d_lin_softplus
+    rates: 64  span 1.99e-01..1.45e+02 (2.9 decades), significant 61, per-decade 21.3, KS vs log-uniform 0.387
+[analyze] s4d_lin_log_longtrain
+    rates: 64  span 4.25e-02..2.63e+02 (3.8 decades), significant 64, per-decade 16.9, KS vs log-uniform 0.374
+[analyze] s4d_lin_narrow_longtrain
+    rates: 64  span 5.81e-02..2.40e+02 (3.6 decades), significant 64, per-decade 17.7, KS vs log-uniform 0.415
+[analyze] s4d_deep
+    rates: 8192  span 6.23e-03..6.74e+02 (5.0 decades), significant 2031, per-decade 409.8, KS vs log-uniform 0.250
+wrote results/analysis.json (now run `python -m src.analyze_kernels` for the kernel section)
+[analyze] implied kernels vs the true L1 kernel
+    alpha=0.2: soe_jiang L2 3.08e-02   s4d_lin_log L2 3.49e-03   s4d_lin_linear L2 3.62e-03   s4d_lin_narrow L2 3.58e-03   s4d_lin_log_longtrain L2 3.57e-03   soe_ls L2 4.50e-11
+    alpha=0.3: soe_jiang L2 8.59e-03   s4d_lin_log L2 5.85e-03   s4d_lin_linear L2 6.21e-03   s4d_lin_narrow L2 5.94e-03   s4d_lin_log_longtrain L2 3.38e-03   soe_ls L2 5.99e-11
+    alpha=0.4: soe_jiang L2 7.37e-03   s4d_lin_log L2 7.84e-03   s4d_lin_linear L2 8.21e-03   s4d_lin_narrow L2 7.97e-03   s4d_lin_log_longtrain L2 2.93e-03   soe_ls L2 6.14e-11
+    alpha=0.5: soe_jiang L2 1.06e-02   s4d_lin_log L2 8.66e-03   s4d_lin_linear L2 8.99e-03   s4d_lin_narrow L2 8.81e-03   s4d_lin_log_longtrain L2 2.81e-03   soe_ls L2 4.13e-11
+    alpha=0.6: soe_jiang L2 7.87e-03   s4d_lin_log L2 7.58e-03   s4d_lin_linear L2 7.75e-03   s4d_lin_narrow L2 7.68e-03   s4d_lin_log_longtrain L2 1.92e-03   soe_ls L2 1.23e-10
+    alpha=0.7: soe_jiang L2 8.23e-03   s4d_lin_log L2 5.16e-03   s4d_lin_linear L2 5.39e-03   s4d_lin_narrow L2 5.22e-03   s4d_lin_log_longtrain L2 2.05e-03   soe_ls L2 2.70e-10
+    alpha=0.8: soe_jiang L2 1.72e-02   s4d_lin_log L2 2.85e-03   s4d_lin_linear L2 3.71e-03   s4d_lin_narrow L2 3.08e-03   s4d_lin_log_longtrain L2 1.66e-03   soe_ls L2 6.04e-10
+    alpha=0.9: soe_jiang L2 1.07e-01   s4d_lin_log L2 1.24e-03   s4d_lin_linear L2 2.38e-03   s4d_lin_narrow L2 1.40e-03   s4d_lin_log_longtrain L2 1.20e-03   soe_ls L2 1.51e-09
+wrote results/analysis.json (kernels + spectral added)
+[fig] kernel_and_soe
+wrote F:\komisarov\fracrelax\results\fig01_kernel_and_soe.png
+[fig] data_examples
+wrote F:\komisarov\fracrelax\results\fig02_data_examples.png
+[fig] training
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "F:\komisarov\fracrelax\src\figures.py", line 603, in <module>
+    reg[nm]()
+    ~~~~~~~^^
+  File "F:\komisarov\fracrelax\src\figures.py", line 209, in fig_training
+    fig.tight_layout()
+    ~~~~~~~~~~~~~~~~^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\figure.py", line 3665, in tight_layout
+    engine.execute(self)
+    ~~~~~~~~~~~~~~^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\layout_engine.py", line 188, in execute
+    kwargs = get_tight_layout_figure(
+        fig, fig.axes, get_subplotspec_list(fig.axes), renderer,
+        pad=info['pad'], h_pad=info['h_pad'], w_pad=info['w_pad'],
+        rect=info['rect'])
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\_tight_layout.py", line 266, in get_tight_layout_figure
+    kwargs = _auto_adjust_subplotpars(fig, renderer,
+                                      shape=(max_nrows, max_ncols),
+    ...<2 lines>...
+                                      ax_bbox_list=ax_bbox_list,
+                                      pad=pad, h_pad=h_pad, w_pad=w_pad)
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\_tight_layout.py", line 82, in _auto_adjust_subplotpars
+    bb += [martist._get_tightbbox_for_layout_only(ax, renderer)]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\artist.py", line 1485, in _get_tightbbox_for_layout_only
+    return obj.get_tightbbox(*args, **{**kwargs, "for_layout_only": True})
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\axes\_base.py", line 4788, in get_tightbbox
+    bbox = a.get_tightbbox(renderer)
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\legend.py", line 1091, in get_tightbbox
+    return self._legend_box.get_window_extent(renderer)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\offsetbox.py", line 367, in get_window_extent
+    bbox = self.get_bbox(renderer)
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\offsetbox.py", line 360, in get_bbox
+    bbox, offsets = self._get_bbox_and_child_offsets(renderer)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\offsetbox.py", line 460, in _get_bbox_and_child_offsets
+    bboxes = [c.get_bbox(renderer) for c in self.get_visible_children()]
+              ~~~~~~~~~~^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\offsetbox.py", line 360, in get_bbox
+    bbox, offsets = self._get_bbox_and_child_offsets(renderer)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\offsetbox.py", line 493, in _get_bbox_and_child_offsets
+    bboxes = [c.get_bbox(renderer) for c in self.get_visible_children()]
+              ~~~~~~~~~~^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\offsetbox.py", line 360, in get_bbox
+    bbox, offsets = self._get_bbox_and_child_offsets(renderer)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\offsetbox.py", line 460, in _get_bbox_and_child_offsets
+    bboxes = [c.get_bbox(renderer) for c in self.get_visible_children()]
+              ~~~~~~~~~~^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\offsetbox.py", line 360, in get_bbox
+    bbox, offsets = self._get_bbox_and_child_offsets(renderer)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\offsetbox.py", line 493, in _get_bbox_and_child_offsets
+    bboxes = [c.get_bbox(renderer) for c in self.get_visible_children()]
+              ~~~~~~~~~~^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\offsetbox.py", line 802, in get_bbox
+    bbox, info, _ = self._text._get_layout(renderer)
+                    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\text.py", line 479, in _get_layout
+    w, h, d = _get_text_metrics_with_cache(
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        renderer, clean_line, self._fontproperties,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ismath=ismath, dpi=self.get_figure(root=True).dpi)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\text.py", line 59, in _get_text_metrics_with_cache
+    return get_text_metrics(text, fontprop.copy(), ismath, dpi)
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\text.py", line 125, in _text_metrics
+    return local_renderer.get_text_width_height_descent(text, fontprop, ismath)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\backends\backend_agg.py", line 259, in get_text_width_height_descent
+    parse = self.mathtext_parser.parse(s, self.dpi, prop)
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\mathtext.py", line 86, in parse
+    return self._parse_cached(s, dpi, prop, antialiased, load_glyph_flags)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\mathtext.py", line 100, in _parse_cached
+    box = self._parser.parse(s, fontset, fontsize, dpi)
+  File "F:\komisarov\fracrelax\.venv\Lib\site-packages\matplotlib\_mathtext.py", line 2350, in parse
+    raise ValueError("\n" + err.explain(0)) from None
+ValueError: 
+SOE / Jiang (per-$lpha$ readout)
+                 ^
+ParseException: Expected end of text, found '$'  (at char 17), (line:1, col:18)

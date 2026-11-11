@@ -1,0 +1,21 @@
+# Pinned to the versions this project was developed and benchmarked on
+# (Python 3.14, Windows 10, RTX 4060 Ti).
+#
+# The extra index is what provides the CUDA build of torch on Windows; the
+# plain PyPI wheel for Windows is CPU-only.  For a CPU-only machine, drop the
+# two lines below and `pip install torch` instead -- everything still runs,
+# just slower (see README, "Running on CPU").
+--extra-index-url https://download.pytorch.org/whl/cu129
+torch==2.9.0+cu129
+
+numpy>=2.0
+scipy>=1.14
+matplotlib>=3.9
+pandas>=2.2
+psutil>=6.0
+
+# notebooks
+jupyter>=1.1
+notebook>=7.2
+nbformat>=5.10
+ipykernel>=6.29
