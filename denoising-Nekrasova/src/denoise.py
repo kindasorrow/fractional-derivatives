@@ -3,8 +3,9 @@
 
 Для каждой картинки отдельно подбираются число итераций и порог kappa
 для Перона-Малика и для каждого порядка alpha. Сравнивается лучшее с лучшим
-Картинки сравнения и графики сохраняются в PNG
+Картинки сравнения и графики сохраняются в jpg
 
+Данные ищутся сами в папке data (пж распакуйте с ними архив перед запуском кода)
 """
 from __future__ import annotations
 
@@ -263,9 +264,9 @@ def save_comparison(sample: Sample, alpha: float, out_dir: Path) -> None:
     fig.suptitle(f"{sample.dataset} sigma={sample.sigma:g}: {name}", fontsize=11)
     safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in name)
     fig.savefig(
-        out_dir / f"comparison_{sample.dataset}_s{sample.sigma:g}_{safe_name}.png",
+        out_dir / f"comparison_{sample.dataset}_s{sample.sigma:g}_{safe_name}.jpg",
         dpi=140,
-        format="png",
+        format="jpg",
     )
     plt.close(fig)
 
@@ -317,7 +318,7 @@ def save_curve(rows: list[dict], metric_name: str, sigma: float, out_path: Path)
     ax.set_title(f"{metric_name.upper()} vs alpha (sigma={sigma:g}, mean over images, best-tuned)")
     ax.grid(True, alpha=0.25)
     ax.legend(fontsize=8)
-    fig.savefig(out_path, dpi=160, format="png")
+    fig.savefig(out_path, dpi=160, format="jpg")
     plt.close(fig)
 
 
@@ -424,8 +425,8 @@ def main() -> None:
             all_samples.append(sample)
 
         # Curves for this sigma
-        save_curve(rows, "psnr", sigma, args.out_dir / f"psnr_vs_alpha_s{sigma:g}.png")
-        save_curve(rows, "ssim", sigma, args.out_dir / f"ssim_vs_alpha_s{sigma:g}.png")
+        save_curve(rows, "psnr", sigma, args.out_dir / f"psnr_vs_alpha_s{sigma:g}.jpg")
+        save_curve(rows, "ssim", sigma, args.out_dir / f"ssim_vs_alpha_s{sigma:g}.jpg")
 
   
     csv_path = args.out_dir / "metrics.csv"
@@ -481,8 +482,8 @@ def main() -> None:
     print("PM is typically at least as good as any alpha (alpha=1 recovers ordinary PM up")
     print("to the stencil difference).")
     print(f"\nSaved: {csv_path}")
-    print(f"       psnr_vs_alpha_s*.png, ssim_vs_alpha_s*.png")
-    print(f"       comparison_*.png    {args.out_dir}")
+    print(f"       psnr_vs_alpha_s*.jpg, ssim_vs_alpha_s*.jpg")
+    print(f"       comparison_*.jpg    {args.out_dir}")
 
 
 if __name__ == "__main__":
