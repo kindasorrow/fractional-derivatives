@@ -1,0 +1,15 @@
+# Data
+data/*
+!data/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Results (если не хотите заливать картинки)
+# results/*
+# !results/.gitkeep
+
+# OS
+.DS_Store
