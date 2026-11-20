@@ -1,0 +1,461 @@
+{
+  "environment": {
+    "python": "3.14.6",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "repeats": 2,
+  "timing_statistic": "median",
+  "kernel_tolerance": 1e-08,
+  "reference": "Exact Mittag-Leffler propagation of the discrete spatial first mode; all time nodes",
+  "soe_method": "Positive log-trapezoid Laplace quadrature for t^-alpha/Gamma(1-alpha); exact newest interval; recurrence for older intervals",
+  "limitations": [
+    "Kernel tolerance is verified on a logarithmic sample grid, not an interval-arithmetic certificate.",
+    "Fast history storage is bounded by exponential terms; returned Solution still stores the entire trajectory.",
+    "SOE construction differs from Jiang et al. integration-by-parts quadrature for t^(-1-alpha).",
+    "Observed orders on finite meshes need not yet equal the asymptotic order."
+  ],
+  "sources": [
+    {
+      "title": "Stynes, O Riordan, Gracia (2017): Error Analysis of a Finite Difference Method on Graded Meshes for a Time-Fractional Diffusion Equation",
+      "url": "https://doi.org/10.1137/16M1082329"
+    },
+    {
+      "title": "Jiang, Zhang, Zhang, Zhang (2017): Fast evaluation of the Caputo fractional derivative and its applications to fractional diffusion equations",
+      "url": "https://arxiv.org/abs/1511.03453"
+    }
+  ],
+  "runtime": [
+    {
+      "mesh": "uniform",
+      "alpha": 0.5,
+      "n_x": 33,
+      "n_steps": 500,
+      "full_l1_seconds": 0.0424479999965115,
+      "soe_seconds": 0.05762284999946132,
+      "kernel_setup_seconds": 0.0053377000003820285,
+      "speedup_excluding_setup": 0.7366522134345718,
+      "speedup_including_setup": 0.6741999553151475,
+      "exponential_terms": 214,
+      "sampled_kernel_relative_error": 8.119611649703984e-10,
+      "maximum_soe_vs_full_l1": 1.587618925213974e-11,
+      "full_l1_temporal_linf": 0.07176290126434182,
+      "soe_temporal_linf": 0.07176290126434182,
+      "full_history_bytes": 124000,
+      "soe_history_bytes": 53072
+    },
+    {
+      "mesh": "uniform",
+      "alpha": 0.5,
+      "n_x": 33,
+      "n_steps": 2000,
+      "full_l1_seconds": 0.2822243500013428,
+      "soe_seconds": 0.23300775000097929,
+      "kernel_setup_seconds": 0.008585700001276564,
+      "speedup_excluding_setup": 1.211223017260828,
+      "speedup_including_setup": 1.168178814445125,
+      "exponential_terms": 220,
+      "sampled_kernel_relative_error": 8.034001242052113e-10,
+      "maximum_soe_vs_full_l1": 1.587551617943106e-11,
+      "full_l1_temporal_linf": 0.04374291818297027,
+      "soe_temporal_linf": 0.04374291818297027,
+      "full_history_bytes": 496000,
+      "soe_history_bytes": 54560
+    },
+    {
+      "mesh": "uniform",
+      "alpha": 0.5,
+      "n_x": 33,
+      "n_steps": 10000,
+      "full_l1_seconds": 3.8802510499990603,
+      "soe_seconds": 1.1851955499987525,
+      "kernel_setup_seconds": 0.0058213000011164695,
+      "speedup_excluding_setup": 3.273933191871286,
+      "speedup_including_setup": 3.2579312794772695,
+      "exponential_terms": 226,
+      "sampled_kernel_relative_error": 8.010868635111024e-10,
+      "maximum_soe_vs_full_l1": 1.5875939451959198e-11,
+      "full_l1_temporal_linf": 0.021856151975105154,
+      "soe_temporal_linf": 0.021856151975105154,
+      "full_history_bytes": 2480000,
+      "soe_history_bytes": 56048
+    },
+    {
+      "mesh": "graded",
+      "alpha": 0.5,
+      "n_x": 33,
+      "n_steps": 500,
+      "full_l1_seconds": 0.0425698500002909,
+      "soe_seconds": 0.06696775000091293,
+      "kernel_setup_seconds": 0.006861000001663342,
+      "speedup_excluding_setup": 0.6356768743120468,
+      "speedup_including_setup": 0.5766026107553686,
+      "exponential_terms": 264,
+      "sampled_kernel_relative_error": 7.972908999676065e-10,
+      "maximum_soe_vs_full_l1": 1.587091569277277e-11,
+      "full_l1_temporal_linf": 0.0004718862338547458,
+      "soe_temporal_linf": 0.0004718862338397578,
+      "full_history_bytes": 124000,
+      "soe_history_bytes": 65472
+    },
+    {
+      "mesh": "graded",
+      "alpha": 0.5,
+      "n_x": 33,
+      "n_steps": 2000,
+      "full_l1_seconds": 0.32094960000540596,
+      "soe_seconds": 0.26508744999955525,
+      "kernel_setup_seconds": 0.008945399997173809,
+      "speedup_excluding_setup": 1.2107310248219765,
+      "speedup_including_setup": 1.1712084883591034,
+      "exponential_terms": 281,
+      "sampled_kernel_relative_error": 7.963477655081874e-10,
+      "maximum_soe_vs_full_l1": 1.5872893277535383e-11,
+      "full_l1_temporal_linf": 6.237024517208312e-05,
+      "soe_temporal_linf": 6.237024516764222e-05,
+      "full_history_bytes": 496000,
+      "soe_history_bytes": 69688
+    },
+    {
+      "mesh": "graded",
+      "alpha": 0.5,
+      "n_x": 33,
+      "n_steps": 10000,
+      "full_l1_seconds": 3.8471712499958812,
+      "soe_seconds": 1.3971993000013754,
+      "kernel_setup_seconds": 0.008854600004269741,
+      "speedup_excluding_setup": 2.75348781665729,
+      "speedup_including_setup": 2.7361477749753655,
+      "exponential_terms": 300,
+      "sampled_kernel_relative_error": 7.972755788898667e-10,
+      "maximum_soe_vs_full_l1": 1.5873843906000218e-11,
+      "full_l1_temporal_linf": 5.763392491364705e-06,
+      "soe_temporal_linf": 5.763392489921415e-06,
+      "full_history_bytes": 2480000,
+      "soe_history_bytes": 74400
+    }
+  ],
+  "convergence": [
+    {
+      "alpha": 0.2,
+      "mesh": "uniform",
+      "n_steps": 128,
+      "temporal_linf": 0.03385929468281615,
+      "observed_order": null,
+      "asymptotic_order": 0.2
+    },
+    {
+      "alpha": 0.2,
+      "mesh": "uniform",
+      "n_steps": 256,
+      "temporal_linf": 0.03631955809332649,
+      "observed_order": -0.10119472818988372,
+      "asymptotic_order": 0.2
+    },
+    {
+      "alpha": 0.2,
+      "mesh": "uniform",
+      "n_steps": 512,
+      "temporal_linf": 0.03866693867218271,
+      "observed_order": -0.09035389910007639,
+      "asymptotic_order": 0.2
+    },
+    {
+      "alpha": 0.2,
+      "mesh": "uniform",
+      "n_steps": 1024,
+      "temporal_linf": 0.040837402527378275,
+      "observed_order": -0.07879055787291261,
+      "asymptotic_order": 0.2
+    },
+    {
+      "alpha": 0.2,
+      "mesh": "graded",
+      "n_steps": 128,
+      "temporal_linf": 0.0008920420222248149,
+      "observed_order": null,
+      "asymptotic_order": 1.8
+    },
+    {
+      "alpha": 0.2,
+      "mesh": "graded",
+      "n_steps": 256,
+      "temporal_linf": 0.00029115091456777265,
+      "observed_order": 1.6153445234816897,
+      "asymptotic_order": 1.8
+    },
+    {
+      "alpha": 0.2,
+      "mesh": "graded",
+      "n_steps": 512,
+      "temporal_linf": 9.30311126972061e-05,
+      "observed_order": 1.645981963376331,
+      "asymptotic_order": 1.8
+    },
+    {
+      "alpha": 0.2,
+      "mesh": "graded",
+      "n_steps": 1024,
+      "temporal_linf": 2.9280729254455018e-05,
+      "observed_order": 1.6677617968359348,
+      "asymptotic_order": 1.8
+    },
+    {
+      "alpha": 0.35,
+      "mesh": "uniform",
+      "n_steps": 128,
+      "temporal_linf": 0.07655397594708063,
+      "observed_order": null,
+      "asymptotic_order": 0.35
+    },
+    {
+      "alpha": 0.35,
+      "mesh": "uniform",
+      "n_steps": 256,
+      "temporal_linf": 0.07846039734532989,
+      "observed_order": -0.035487333413153035,
+      "asymptotic_order": 0.35
+    },
+    {
+      "alpha": 0.35,
+      "mesh": "uniform",
+      "n_steps": 512,
+      "temporal_linf": 0.07793389268937406,
+      "observed_order": 0.009713762894823367,
+      "asymptotic_order": 0.35
+    },
+    {
+      "alpha": 0.35,
+      "mesh": "uniform",
+      "n_steps": 1024,
+      "temporal_linf": 0.07503998814763735,
+      "observed_order": 0.054591278765112924,
+      "asymptotic_order": 0.35
+    },
+    {
+      "alpha": 0.35,
+      "mesh": "graded",
+      "n_steps": 128,
+      "temporal_linf": 0.0017381367935197511,
+      "observed_order": null,
+      "asymptotic_order": 1.65
+    },
+    {
+      "alpha": 0.35,
+      "mesh": "graded",
+      "n_steps": 256,
+      "temporal_linf": 0.0006027115393102411,
+      "observed_order": 1.528002036989936,
+      "asymptotic_order": 1.65
+    },
+    {
+      "alpha": 0.35,
+      "mesh": "graded",
+      "n_steps": 512,
+      "temporal_linf": 0.0002042071249729327,
+      "observed_order": 1.5614344823652448,
+      "asymptotic_order": 1.65
+    },
+    {
+      "alpha": 0.35,
+      "mesh": "graded",
+      "n_steps": 1024,
+      "temporal_linf": 6.837278685212222e-05,
+      "observed_order": 1.5785390686333753,
+      "asymptotic_order": 1.65
+    },
+    {
+      "alpha": 0.5,
+      "mesh": "uniform",
+      "n_steps": 128,
+      "temporal_linf": 0.0988098812660132,
+      "observed_order": null,
+      "asymptotic_order": 0.5
+    },
+    {
+      "alpha": 0.5,
+      "mesh": "uniform",
+      "n_steps": 256,
+      "temporal_linf": 0.0861609714510172,
+      "observed_order": 0.19762080645868627,
+      "asymptotic_order": 0.5
+    },
+    {
+      "alpha": 0.5,
+      "mesh": "uniform",
+      "n_steps": 512,
+      "temporal_linf": 0.07124332096467545,
+      "observed_order": 0.27427974775605163,
+      "asymptotic_order": 0.5
+    },
+    {
+      "alpha": 0.5,
+      "mesh": "uniform",
+      "n_steps": 1024,
+      "temporal_linf": 0.056463410358917,
+      "observed_order": 0.3354384989651197,
+      "asymptotic_order": 0.5
+    },
+    {
+      "alpha": 0.5,
+      "mesh": "graded",
+      "n_steps": 128,
+      "temporal_linf": 0.003213715868657263,
+      "observed_order": null,
+      "asymptotic_order": 1.5
+    },
+    {
+      "alpha": 0.5,
+      "mesh": "graded",
+      "n_steps": 256,
+      "temporal_linf": 0.001227973175543351,
+      "observed_order": 1.3879633368602273,
+      "asymptotic_order": 1.5
+    },
+    {
+      "alpha": 0.5,
+      "mesh": "graded",
+      "n_steps": 512,
+      "temporal_linf": 0.0004560247185803057,
+      "observed_order": 1.4290951139555206,
+      "asymptotic_order": 1.5
+    },
+    {
+      "alpha": 0.5,
+      "mesh": "graded",
+      "n_steps": 1024,
+      "temporal_linf": 0.00016656360214295507,
+      "observed_order": 1.4530388528925755,
+      "asymptotic_order": 1.5
+    },
+    {
+      "alpha": 0.75,
+      "mesh": "uniform",
+      "n_steps": 128,
+      "temporal_linf": 0.04737746835597345,
+      "observed_order": null,
+      "asymptotic_order": 0.75
+    },
+    {
+      "alpha": 0.75,
+      "mesh": "uniform",
+      "n_steps": 256,
+      "temporal_linf": 0.028593542111219006,
+      "observed_order": 0.728511760108557,
+      "asymptotic_order": 0.75
+    },
+    {
+      "alpha": 0.75,
+      "mesh": "uniform",
+      "n_steps": 512,
+      "temporal_linf": 0.017062372547380078,
+      "observed_order": 0.744871079816415,
+      "asymptotic_order": 0.75
+    },
+    {
+      "alpha": 0.75,
+      "mesh": "uniform",
+      "n_steps": 1024,
+      "temporal_linf": 0.010252681239377615,
+      "observed_order": 0.7348170226249483,
+      "asymptotic_order": 0.75
+    },
+    {
+      "alpha": 0.75,
+      "mesh": "graded",
+      "n_steps": 128,
+      "temporal_linf": 0.007790174328197175,
+      "observed_order": null,
+      "asymptotic_order": 1.25
+    },
+    {
+      "alpha": 0.75,
+      "mesh": "graded",
+      "n_steps": 256,
+      "temporal_linf": 0.0035672166593203603,
+      "observed_order": 1.1268567708825061,
+      "asymptotic_order": 1.25
+    },
+    {
+      "alpha": 0.75,
+      "mesh": "graded",
+      "n_steps": 512,
+      "temporal_linf": 0.001598180160887197,
+      "observed_order": 1.1583687916614733,
+      "asymptotic_order": 1.25
+    },
+    {
+      "alpha": 0.75,
+      "mesh": "graded",
+      "n_steps": 1024,
+      "temporal_linf": 0.0007052914462204463,
+      "observed_order": 1.1801386027584724,
+      "asymptotic_order": 1.25
+    },
+    {
+      "alpha": 0.9,
+      "mesh": "uniform",
+      "n_steps": 128,
+      "temporal_linf": 0.02067488273267215,
+      "observed_order": null,
+      "asymptotic_order": 0.9
+    },
+    {
+      "alpha": 0.9,
+      "mesh": "uniform",
+      "n_steps": 256,
+      "temporal_linf": 0.011000006809784413,
+      "observed_order": 0.9103747296150742,
+      "asymptotic_order": 0.9
+    },
+    {
+      "alpha": 0.9,
+      "mesh": "uniform",
+      "n_steps": 512,
+      "temporal_linf": 0.0057961646688700075,
+      "observed_order": 0.924333929366821,
+      "asymptotic_order": 0.9
+    },
+    {
+      "alpha": 0.9,
+      "mesh": "uniform",
+      "n_steps": 1024,
+      "temporal_linf": 0.0030434727330145295,
+      "observed_order": 0.9293801418758505,
+      "asymptotic_order": 0.9
+    },
+    {
+      "alpha": 0.9,
+      "mesh": "graded",
+      "n_steps": 128,
+      "temporal_linf": 0.01150537091243553,
+      "observed_order": null,
+      "asymptotic_order": 1.1
+    },
+    {
+      "alpha": 0.9,
+      "mesh": "graded",
+      "n_steps": 256,
+      "temporal_linf": 0.005731443012304105,
+      "observed_order": 1.0053371753070441,
+      "asymptotic_order": 1.1
+    },
+    {
+      "alpha": 0.9,
+      "mesh": "graded",
+      "n_steps": 512,
+      "temporal_linf": 0.0028226975493450546,
+      "observed_order": 1.021823860777341,
+      "asymptotic_order": 1.1
+    },
+    {
+      "alpha": 0.9,
+      "mesh": "graded",
+      "n_steps": 1024,
+      "temporal_linf": 0.0013799226539693565,
+      "observed_order": 1.032487148219765,
+      "asymptotic_order": 1.1
+    }
+  ]
+}
