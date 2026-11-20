@@ -9,8 +9,6 @@
 [![SciPy](https://img.shields.io/badge/scipy-✓-8CAAE6.svg)](https://scipy.org/)
 [![Matplotlib](https://img.shields.io/badge/matplotlib-✓-11557c.svg)](https://matplotlib.org/)
 
-🇷🇺 Русский · [🇬🇧 English](README.md)
-
 </div>
 
 ---
