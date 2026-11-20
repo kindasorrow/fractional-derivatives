@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 
 import numpy as np
 
@@ -16,8 +17,8 @@ from .config import L_SCALING, L_TRAIN, RESULTS
 ORDER = ["transformer_rope", "transformer_nope", "transformer_alibi",
          "s4d_deep", "s4d_lin_log", "s4d_lin_linear", "s4d_lin_narrow",
          "s4d_lin_softplus", "s4d_lin_log_longtrain",
-         "s4d_lin_narrow_longtrain", "s4d_lin_log_lsinit", "soe_jiang",
-         "soe_jiang_table", "soe_jiang_trainband", "soe_jiang_lsinit"]
+         "s4d_lin_narrow_longtrain", "s4d_lin_log_lsinit", "s4d_lin_log_lsinit_table", "soe_jiang",
+         "soe_jiang_table", "soe_jiang_trainband", "soe_jiang_lsinit", "soe_jiang_lsinit_table"]
 
 # What each model is told about the TEST horizon (T = 100 s, L = 10^4), so the
 # accuracy table reads unambiguously.  "no" = it only ever saw / was built for
@@ -26,8 +27,10 @@ KNOWS_T100 = {
     "soe_jiang": "yes: nodes built for T=100",
     "soe_jiang_table": "yes: nodes built for T=100",
     "soe_jiang_lsinit": "yes: nodes + LS weights for T=100",
+    "soe_jiang_lsinit_table": "yes: nodes + LS weights for T=100",
     "soe_jiang_trainband": "no: nodes built for T=10",
     "s4d_lin_log_lsinit": "partly: LS weights fitted on L=1000 kernel",
+    "s4d_lin_log_lsinit_table": "partly: LS weights fitted on L=1000 kernel",
     "s4d_lin_log_longtrain": "yes: trained on L=10^4",
     "s4d_lin_narrow_longtrain": "yes: trained on L=10^4",
 }
@@ -259,9 +262,18 @@ def main():
                      "over the full 10^4 lags\n")
         parts.append(md(*table_kernels(an)))
     txt = "\n".join(parts)
-    with open(os.path.join(RESULTS, "tables.md"), "w", encoding="utf-8") as fh:
+    out = os.path.join(RESULTS, "tables.md")
+    with open(out, "w", encoding="utf-8") as fh:
         fh.write(txt)
-    print(txt)
+    # The tables carry non-ASCII (superscripts, +/-), and a Windows console --
+    # or the pipe `src.pipeline` hands this stage -- is cp1251 here, not UTF-8.
+    # The file above is the deliverable; never let echoing it fail the stage.
+    try:
+        print(txt)
+    except UnicodeEncodeError:
+        sys.stdout.reconfigure(errors="replace")
+        print(txt)
+    print(f"\nwrote {out}")
 
 
 if __name__ == "__main__":

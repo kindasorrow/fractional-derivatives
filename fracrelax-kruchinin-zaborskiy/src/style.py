@@ -44,6 +44,10 @@ MODEL_STYLE = {
                                  "S4D-lin, 1-scale, trained at $L$=10000"),
     "soe_jiang_lsinit":    (SLOT[2], "-.", "D", "SOE / Jiang (LS-init readout)"),
     "s4d_lin_log_lsinit":  (SLOT[3], "-.", "D", "S4D-linear (log init, LS-init readout)"),
+    "soe_jiang_lsinit_table":   (SLOT[2], (0, (1, 1)), "P",
+                                 r"SOE / Jiang (LS-init, per-$\alpha$ readout)"),
+    "s4d_lin_log_lsinit_table": (SLOT[3], (0, (1, 1)), "P",
+                                 r"S4D-linear (LS-init, per-$\alpha$ readout)"),
 }
 REFERENCE = dict(color=INK2, ls=(0, (4, 2)), lw=1.6)
 

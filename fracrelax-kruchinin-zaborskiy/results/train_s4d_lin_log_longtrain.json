@@ -1,5 +1,6 @@
 {
   "name": "s4d_lin_log_longtrain",
+  "tag": "s4d_lin_log_longtrain",
   "label": "S4D-linear (trained at L=10000)",
   "family": "s4d_lin",
   "n_params": 3360,
@@ -10,8 +11,8 @@
   "wd": 0.0,
   "seed": 20261022,
   "train_L": 10000,
-  "train_time_s": 84.08194208145142,
-  "train_peak_mem_MiB": 129.69775390625,
+  "train_time_s": 73.69858837127686,
+  "train_peak_mem_MiB": 130.19482421875,
   "best_step": 19000,
   "best_val_rel_l2_med": 0.001605699653737247,
   "history": [
