@@ -102,4 +102,4 @@ C:\Noises
 ├── 🔊 data/                 # white.wav, pink.wav, brownian.wav
 ├── requirements.txt
 ├── .gitignore
-└── README.md / README.ru.md
+└── README.md
