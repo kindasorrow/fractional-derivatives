@@ -59,3 +59,8 @@ g=1/(1+(∣∇^α u∣/κ))^2
 Оператор gl_adjoint — сопряжённая (в дискретном смысле) форма с shift_next, чтобы собрать дивергенцию. Обновление:
 u←u−Δt (Adj_⁡xf_x+Adj⁡_yf_y),Δt=0.12
 ```
+<img width="1200" height="768" alt="psnr_vs_alpha_s25" src="https://github.com/user-attachments/assets/4f37ec12-34dd-4033-990e-e7b848054f17" />
+<img width="1200" height="768" alt="ssim_vs_alpha_s25" src="https://github.com/user-attachments/assets/916fa5ce-7d31-44df-9db4-1c4a85660b82" />
+Пример результатов:
+<img width="2100" height="588" alt="comparison_DTD_s25_veined_0097" src="https://github.com/user-attachments/assets/3d37d9e9-e276-4efb-9138-0d96c92b5573" />
+<img width="2100" height="588" alt="comparison_BSD500_s25_3096" src="https://github.com/user-attachments/assets/ed1a1c3e-b925-4e99-802c-c1f524028131" />
