@@ -1,5 +1,7 @@
 > **Reference.** Every error below is relative to the **L1 solution** (the training target), not to the continuous equation. The L1 scheme itself deviates from the exact kernel K(t) by +70% at t=tau, 7.6% at t=0.1, 1.5% at t=0.7 and ~0.1% only by t~12 (`results/validation.json`), so these numbers say how well a model learns the *L1 operator*. For statements about the equation, regenerate the data on a 10x finer grid and decimate.
 
+> **Unseen α.** `*_table` models use one independent readout vector per training α and define no interpolation for unseen α. Their `unseen α` entries are `N/A` and are excluded from generalisation comparisons.
+
 ### Accuracy vs sequence length (median relative $L_2$ vs the L1 solution; trained only at L=1000)
 
 | model | knows T=100? | params | seeds | L=1000 | L=2000 | L=4000 | L=7000 | L=10000 | unseen a |
@@ -15,12 +17,12 @@
 | S4D-linear (trained at L=10000) | yes: trained on L=10^4 | 3,360 | 1 | 9.31e-04 | 1.12e-03 | 1.40e-03 | 1.55e-03 | 1.67e-03 | 2.30e-03 |
 | S4D-linear (1-scale init, trained at L=10000) | yes: trained on L=10^4 | 3,360 | 1 | 1.33e-03 | 1.87e-03 | 2.41e-03 | 2.55e-03 | 2.94e-03 | 4.13e-03 |
 | S4D-linear (log init, LS-initialised readout) | partly: LS weights fitted on L=1000 kernel | 3,360 | 1 | 4.84e+01 | 7.25e+01 | 6.93e+01 | 9.43e+01 | 1.21e+02 | 1.94e+02 |
-| S4D-linear (log init, LS-init, per-alpha readout) | partly: LS weights fitted on L=1000 kernel | 576 | 1 | 2.84e-02 | 1.85e-01 | 2.85e+01 | 1.21e+02 | 1.17e+02 | 1.39e+03 |
+| S4D-linear (log init, LS-init, per-alpha readout) | partly: LS weights fitted on L=1000 kernel | 576 | 1 | 2.84e-02 | 1.85e-01 | 2.85e+01 | 1.21e+02 | 1.17e+02 | N/A |
 | SOE / Jiang (fixed exponents) | yes: nodes built for T=100 | 3,296 | 3 | 9.24e-04 ± 7.2e-05 | 2.16e-03 ± 2.1e-04 | 4.86e-03 ± 2.0e-03 | 9.82e-03 ± 4.1e-03 | 1.35e-02 ± 4.1e-03 | 2.07e-02 ± 3.1e-03 |
-| SOE / Jiang (per-alpha readout) | yes: nodes built for T=100 | 512 | 1 | 7.09e-04 | 4.31e-03 | 1.59e-02 | 3.32e-02 | 3.93e-02 | 2.62e-01 |
+| SOE / Jiang (per-alpha readout) | yes: nodes built for T=100 | 512 | 1 | 7.09e-04 | 4.31e-03 | 1.59e-02 | 3.32e-02 | 3.93e-02 | N/A |
 | SOE / Jiang, train-horizon band | no: nodes built for T=10 | 3,296 | 1 | 4.71e-04 | 1.69e-03 | 6.32e-03 | 1.57e-02 | 1.89e-02 | 2.64e-02 |
 | SOE / Jiang (LS-initialised readout) | yes: nodes + LS weights for T=100 | 3,296 | 3 | 5.33e-05 ± 6.8e-06 | 7.29e-05 ± 1.4e-05 | 7.87e-05 ± 9.9e-06 | 9.92e-05 ± 1.9e-05 | 1.23e-04 ± 1.6e-05 | 3.39e-04 ± 7.7e-05 |
-| SOE / Jiang (LS-init, per-alpha readout) | yes: nodes + LS weights for T=100 | 512 | 1 | 1.64e-07 | 1.82e-07 | 2.39e-07 | 1.75e-07 | 1.93e-07 | 2.60e-01 |
+| SOE / Jiang (LS-init, per-alpha readout) | yes: nodes + LS weights for T=100 | 512 | 1 | 1.64e-07 | 1.82e-07 | 2.39e-07 | 1.75e-07 | 1.93e-07 | N/A |
 | *Jiang nodes + LS weights (no training)* | yes: nodes + LS weights for T=100 | -- | -- | 3.09e-08 | 3.23e-08 | 3.41e-08 | 3.31e-08 | 3.22e-08 | -- |
 
 

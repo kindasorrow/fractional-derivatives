@@ -4,10 +4,9 @@ r"""Fast CPU self-checks for the code paths that are easy to get subtly wrong.
 
 1. every model is strictly causal (perturb the last input, earlier outputs fixed);
 2. chunked ALiBi attention == the full (1, H, L, L)-bias reference;
-3. the LS-initialised readout really starts at the least-squares solution.
-   The per-alpha table reaches ~1e-7; the alpha-MLP is limited to ~1e-3 by the
-   conditioning of its embedding (see `check_lsinit`), which is why the
-   `*_lsinit_table` models exist.
+3. the per-alpha table reproduces the least-squares initialisation accurately;
+   separately, the alpha-MLP diagnostic checks that representation error stays
+   within 2e-3 in float32. Passing the MLP check does not establish LS accuracy.
 """
 
 from __future__ import annotations
@@ -85,8 +84,10 @@ def check_lsinit():
             yh = m(torch.as_tensor(f, dtype=torch.float32), alpha, aid).numpy()
         rel = np.linalg.norm(yh - y_ref, axis=1) / np.linalg.norm(y_ref, axis=1)
         assert rel.max() < tol[readout], (readout, rel)
-        print(f"  LS init ({readout:5s}): rel L2 vs L1  max {rel.max():.1e}"
-              f"   (tolerance {tol[readout]:.0e})")
+        purpose = ("LS-init accuracy" if readout == "table" else
+                   "MLP representation diagnostic")
+        print(f"  {purpose} ({readout}): rel L2 vs L1 max {rel.max():.1e}"
+              f" (tolerance {tol[readout]:.0e})")
 
 
 if __name__ == "__main__":

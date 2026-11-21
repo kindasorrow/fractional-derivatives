@@ -45,6 +45,11 @@ L1_NOTE = ("> **Reference.** Every error below is relative to the **L1 solution*
            "statements about the equation, regenerate the data on a 10x finer grid "
            "and decimate.\n")
 
+UNSEEN_ALPHA_NOTE = ("> **Unseen α.** `*_table` models use one independent "
+                     "readout vector per training α and define no interpolation "
+                     "for unseen α. Their `unseen α` entries are `N/A` and are "
+                     "excluded from generalisation comparisons.\n")
+
 
 def _j(name):
     p = os.path.join(RESULTS, name)
@@ -94,10 +99,12 @@ def table_main(b):
         if len(runs) >= 2:
             cells = [_ms([r["med_by_L"].get(str(L)) for r in runs.values()])
                      for L in L_SCALING]
-            ho = _ms([r["heldout_all_med"] for r in runs.values()])
+            ho = ("N/A" if nm.endswith("_table") else
+                  _ms([r["heldout_all_med"] for r in runs.values()]))
         else:
             cells = [_fmt(acc.get(L)) for L in L_SCALING]
-            ho = _fmt(m.get("heldout_alpha", {}).get("all_med"))
+            ho = ("N/A" if nm.endswith("_table") else
+                  _fmt(m.get("heldout_alpha", {}).get("all_med")))
         rows.append([m["label"], KNOWS_T100.get(nm, KNOWS_DEFAULT),
                      f"{m['n_params']:,}", str(max(1, len(runs)))] + cells + [ho])
     ref = b.get("soe_ls")
@@ -251,6 +258,7 @@ def main():
     b, an = _j("bench.json"), _j("analysis.json")
     parts = []
     parts.append(L1_NOTE)
+    parts.append(UNSEEN_ALPHA_NOTE)
     if b:
         parts.append("### Accuracy vs sequence length "
                      f"(median relative $L_2$ vs the L1 solution; trained only at L={L_TRAIN})\n")
