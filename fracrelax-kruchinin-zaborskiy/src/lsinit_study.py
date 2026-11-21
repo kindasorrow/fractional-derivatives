@@ -180,9 +180,9 @@ def main():
               f"{w['kernel_rel_l2_fp32']:.2e}")
 
     print("[lsinit] dynamic: 2000 steps from the LS start")
-    for kind, lr_rate, tagname in (("s4d_log_init", 1e-2, "S4D band, rates learnable (shipped)"),
-                                   ("s4d_log_init", 0.0, "S4D band, rates frozen"),
-                                   ("jiang_T100", 0.0, "Jiang band (rates fixed by construction)")):
+    for kind, lr_rate, tagname in (("s4d_log_init", 1e-2, "S4D table-readout diagnostic, rates learnable"),
+                                   ("s4d_log_init", 0.0, "S4D table-readout diagnostic, rates frozen"),
+                                   ("jiang_T100", 0.0, "Jiang table-readout control, rates fixed")):
         d = dynamic_probe(kind, lr_rate, device=dev)
         d["label"] = tagname
         rep["dynamic"].append(d)

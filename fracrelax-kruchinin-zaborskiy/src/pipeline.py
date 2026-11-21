@@ -56,6 +56,7 @@ def main():
 
         w(f"# pipeline run {dt.datetime.now().isoformat(timespec='seconds')}")
         w(f"# python {platform.python_version()} on {platform.platform()}")
+        w("# requested stages: " + ", ".join(name for name, _ in todo))
         try:
             import torch
             w(f"# torch {torch.__version__}, cuda={torch.cuda.is_available()}")

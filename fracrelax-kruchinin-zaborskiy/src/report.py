@@ -302,6 +302,23 @@ def main():
                      "kernel value they produce, i.e. how much they must "
                      "cancel.\n")
         parts.append(md(*table_lsinit_dynamic(ls)))
+        parts.append("\n**S4D LS-init is a negative result.** Its log-spaced pole "
+                     "basis makes the weighted LS fit numerically unstable: "
+                     "the largest coefficient is 1.28e+07, the worst cancellation "
+                     "factor is 7.34e+08, and kernel error rises from 3.50e-04 "
+                     "in float64 to 5.88e-02 in float32. The actual MLP-readout "
+                     "run starts with validation error 9.03e+01, reaches "
+                     "4.97e+04 by step 500 and 6.57e+05 by step 1000, and its "
+                     "best recorded validation error after 40,000 steps is "
+                     "4.47e+01. Its L=10000 test error, 1.21e+02, is far above "
+                     "the 5.48e-03 of S4D without LS-init. The 2,000-step "
+                     "rate-dynamics control uses a per-alpha table readout to "
+                     "isolate pole learning: its initial gradient norm is "
+                     "5.19e+05, and training with learnable rates raises "
+                     "validation error from "
+                     "2.74e-02 to 1.25e+03 while freezing rates ends at "
+                     "1.04e-02. These results do not support LS-init as an "
+                     "improvement for S4D.\n")
     if an:
         parts.append("\n### Learned relaxation rates vs Jiang's nodes\n")
         parts.append(md(*table_rates(an)))
