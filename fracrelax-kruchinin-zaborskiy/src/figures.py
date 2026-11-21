@@ -19,6 +19,7 @@ from . import exact, jiang
 from .config import (ALPHAS_HELDOUT, ALPHAS_TRAIN, DATA, LAM, L_LONG,
                      L_SCALING, L_TRAIN, N_STATES, RESULTS, TAU)
 from .l1 import discrete_kernel
+from .jsonio import load_split
 from .bands import (ABLATIONS, MAIN3, S_HI, S_LO_TRAIN, T_LONG, T_TRAIN,
                     jiang_nodes)
 from .style import (GRID, INK, INK2, INK3, MODEL_STYLE, REFERENCE, SLOT,
@@ -35,8 +36,7 @@ def _load(name):
     if not os.path.exists(p):
         print(f"    (skip: {name} missing)")
         return None
-    with open(p) as fh:
-        return json.load(fh)
+    return load_split(p)
 
 
 def _slope(x, y):
@@ -599,6 +599,67 @@ def fig_alpha_breakdown():
     despine(ax[2])
     fig.tight_layout()
     finish(fig, F("fig10_alpha_breakdown.png"))
+
+
+# ===========================================================================
+# 11.  why LS initialisation helps on Jiang nodes and destroys S4D
+# ===========================================================================
+def fig_lsinit():
+    d = _load("lsinit_study.json")
+    if d is None:
+        return
+    fig, ax = plt.subplots(1, 3, figsize=(12.4, 3.9))
+    names = [("jiang_T100", SLOT[2]), ("jiang_T10", SLOT[5]),
+             ("s4d_log_init", SLOT[3])]
+
+    # (a) the LS solution itself
+    for key, col in names:
+        b = d["static"][key]
+        ax[0].loglog(b["rates_ref"], np.abs(b["c_ref"]), ls="none", marker="o",
+                     ms=4, color=col, alpha=0.8,
+                     label=f"{key}  (|c|max {max(abs(x) for x in b['c_ref']):.1e})")
+    ax[0].axhline(1.0, color=INK3, lw=0.8, ls=":")
+    ax[0].set(xlabel=r"pole $s_j$", ylabel=r"$|c_j|$",
+              title=r"(a) least-squares readout, $\alpha$=0.5")
+    ax[0].legend(fontsize=7)
+    despine(ax[0])
+
+    # (b) what that costs in accuracy
+    lab, f64, f32 = [], [], []
+    for key, _ in names:
+        r = max(d["static"][key]["per_alpha"], key=lambda r: r["c_abs_max"])
+        lab.append(key)
+        f64.append(r["kernel_rel_l2_fp64"])
+        f32.append(r["kernel_rel_l2_fp32"])
+    x = np.arange(len(lab))
+    ax[1].bar(x - 0.2, f64, 0.38, color=INK, label="fit in float64", zorder=3)
+    ax[1].bar(x + 0.2, f32, 0.38, color=SLOT[1], label="after float32 cast",
+              zorder=3)
+    ax[1].set(yscale="log", xticks=x, title="(b) kernel error of the LS fit",
+              ylabel=r"relative $L_2$ of the kernel")
+    ax[1].set_xticklabels(lab, fontsize=7)
+    ax[1].legend(fontsize=7)
+    despine(ax[1])
+
+    # (c) and what training then does to it
+    for rec in d["dynamic"]:
+        t = rec["trajectory"]
+        col = SLOT[2] if rec["kind"] == "jiang_T100" else (
+            SLOT[3] if rec["lr_rate"] > 0 else SLOT[0])
+        ls = "-" if rec["lr_rate"] > 0 else "--"
+        ax[2].semilogy([r["step"] for r in t], [r["val"] for r in t],
+                       color=col, ls=ls, marker="o", ms=3.5,
+                       label=rec["label"])
+    ax[2].set(xlabel="optimisation step",
+              ylabel=r"validation median rel. $L_2$",
+              title="(c) training from the LS start")
+    ax[2].legend(fontsize=6.5)
+    despine(ax[2])
+
+    fig.suptitle("LS initialisation: exact on Jiang nodes, a knife-edge on the "
+                 "S4D band", fontsize=10)
+    fig.tight_layout()
+    finish(fig, F("fig11_lsinit.png"))
 
 
 if __name__ == "__main__":

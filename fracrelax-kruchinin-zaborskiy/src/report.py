@@ -13,6 +13,7 @@ import sys
 import numpy as np
 
 from .config import L_SCALING, L_TRAIN, RESULTS
+from .jsonio import load_split
 
 ORDER = ["transformer_rope", "transformer_nope", "transformer_alibi",
          "s4d_deep", "s4d_lin_log", "s4d_lin_linear", "s4d_lin_narrow",
@@ -47,7 +48,7 @@ L1_NOTE = ("> **Reference.** Every error below is relative to the **L1 solution*
 
 def _j(name):
     p = os.path.join(RESULTS, name)
-    return json.load(open(p)) if os.path.exists(p) else None
+    return load_split(p) if os.path.exists(p) else None
 
 
 def _fmt(x, nd=2):
@@ -209,6 +210,34 @@ def table_kernels(an):
     return (hdr, rows) if rows else (None, None)
 
 
+
+def table_lsinit(d):
+    """Why LS initialisation works on Jiang nodes and not on the S4D band."""
+    hdr = ["pole set", "poles", "max abs c", "cancellation", "kernel err (fp64)",
+           "kernel err (fp32)"]
+    rows = []
+    for key, b in d["static"].items():
+        r = max(b["per_alpha"], key=lambda r: r["c_abs_max"])
+        rows.append([f"{key} -- {b['note']}", str(b["n_exp"]),
+                     _fmt(r["c_abs_max"]), _fmt(r["cancellation"]),
+                     _fmt(r["kernel_rel_l2_fp64"]), _fmt(r["kernel_rel_l2_fp32"])])
+    return hdr, rows
+
+
+def table_lsinit_dynamic(d):
+    hdr = ["run", "rates", "val at LS start", "val after 2000 steps",
+           "grad norm at LS start", "max rate drift"]
+    rows = []
+    for rec in d["dynamic"]:
+        t = rec["trajectory"]
+        rows.append([rec["label"],
+                     "learnable" if rec["lr_rate"] > 0 else "frozen",
+                     _fmt(t[0]["val"]), _fmt(t[-1]["val"]),
+                     _fmt(rec["grad_norm_at_ls"]),
+                     f"{rec['rate_drift_max']:.2f} decades"])
+    return hdr, rows
+
+
 def md(hdr, rows):
     if hdr is None:
         return "_(not available)_\n"
@@ -255,6 +284,16 @@ def main():
         parts.append(md(*table_classical(b)))
         parts.append("\n### Error at L=10000 by forcing family\n")
         parts.append(md(*table_kinds(b)))
+    ls = _j("lsinit_study.json")
+    if ls:
+        parts.append("\n### Why LS initialisation works on Jiang nodes and "
+                     "not on the S4D band\n")
+        parts.append(md(*table_lsinit(ls)))
+        parts.append("\nThe worst alpha of the eight is shown. `cancellation` "
+                     "is the sum of |term| over the modes divided by the "
+                     "kernel value they produce, i.e. how much they must "
+                     "cancel.\n")
+        parts.append(md(*table_lsinit_dynamic(ls)))
     if an:
         parts.append("\n### Learned relaxation rates vs Jiang's nodes\n")
         parts.append(md(*table_rates(an)))

@@ -54,23 +54,23 @@
 
 | model | ms @1k | ms @10k | time exp. | MiB @1k | MiB @10k | mem exp. | train s | train MiB |
 |---|---|---|---|---|---|---|---|---|
-| Transformer (RoPE) | 2.71e+00 | 1.54e+01 | 0.74 | 11.6 | 32.0 | 0.44 | 1126 | 316 |
-| Transformer (NoPE) | 2.17e+00 | 1.53e+01 | 0.89 | 11.1 | 26.6 | 0.38 | 1054 | 284 |
-| Transformer (ALiBi) † | 3.13e+00 | 6.69e+01 | 1.36 | 32.0 | 272.8 | 0.93 | 1560 | 323 |
-| S4D (deep, 2 blocks) | 3.03e+00 | 6.09e+00 | 0.33 | 42.0 | 64.4 | 0.16 | 377 | 317 |
-| S4D-linear (log init) | 1.20e+00 | 1.08e+00 | -0.04 | 9.6 | 14.1 | 0.16 | 151 | 50 |
-| S4D-linear (linear init) | 1.02e+00 | 1.05e+00 | 0.01 | 9.6 | 14.1 | 0.16 | 147 | 50 |
-| S4D-linear (single-scale init) | 9.32e-01 | 1.09e+00 | 0.03 | 9.6 | 14.1 | 0.16 | 157 | 50 |
-| S4D-linear (softplus rates) | 1.06e+00 | 1.15e+00 | 0.01 | 9.6 | 14.1 | 0.16 | 148 | 50 |
-| S4D-linear (trained at L=10000) | 1.01e+00 | 1.28e+00 | 0.06 | 9.6 | 14.1 | 0.16 | 74 | 130 |
-| S4D-linear (1-scale init, trained at L=10000) | 1.15e+00 | 1.05e+00 | 0.02 | 9.6 | 14.1 | 0.16 | 74 | 130 |
-| S4D-linear (log init, LS-initialised readout) | 1.08e+00 | 1.02e+00 | -0.02 | 9.6 | 14.1 | 0.16 | 157 | 50 |
-| S4D-linear (log init, LS-init, per-alpha readout) | 1.07e+00 | 6.43e-01 | -0.16 | 9.6 | 14.1 | 0.16 | 125 | 50 |
-| SOE / Jiang (fixed exponents) | 8.86e-01 | 1.05e+00 | 0.11 | 9.6 | 14.1 | 0.16 | 126 | 50 |
-| SOE / Jiang (per-alpha readout) | 1.01e+00 | 6.68e-01 | -0.16 | 9.6 | 14.1 | 0.16 | 99 | 50 |
-| SOE / Jiang, train-horizon band | 1.01e+00 | 1.08e+00 | 0.04 | 9.6 | 14.1 | 0.16 | 139 | 50 |
-| SOE / Jiang (LS-initialised readout) | 1.11e+00 | 1.52e+00 | 0.06 | 9.6 | 14.1 | 0.16 | 126 | 50 |
-| SOE / Jiang (LS-init, per-alpha readout) | 8.93e-01 | 6.51e-01 | -0.14 | 9.6 | 14.1 | 0.16 | 95 | 50 |
+| Transformer (RoPE) | 2.42e+00 | 1.64e+01 | 0.86 | 11.6 | 32.0 | 0.44 | 1126 | 316 |
+| Transformer (NoPE) | 2.01e+00 | 1.70e+01 | 0.94 | 11.1 | 26.6 | 0.38 | 1054 | 284 |
+| Transformer (ALiBi) † | 3.06e+00 | 7.26e+01 | 1.44 | 32.0 | 272.8 | 0.93 | 1560 | 323 |
+| S4D (deep, 2 blocks) | 2.53e+00 | 5.07e+00 | 0.32 | 42.0 | 64.4 | 0.16 | 377 | 317 |
+| S4D-linear (log init) | 9.71e-01 | 9.66e-01 | -0.03 | 9.6 | 14.1 | 0.16 | 151 | 50 |
+| S4D-linear (linear init) | 9.56e-01 | 9.36e-01 | 0.00 | 9.6 | 14.1 | 0.16 | 147 | 50 |
+| S4D-linear (single-scale init) | 9.77e-01 | 9.92e-01 | 0.04 | 9.6 | 14.1 | 0.16 | 157 | 50 |
+| S4D-linear (softplus rates) | 9.73e-01 | 8.41e-01 | -0.09 | 9.6 | 14.1 | 0.16 | 148 | 50 |
+| S4D-linear (trained at L=10000) | 9.77e-01 | 9.66e-01 | -0.02 | 9.6 | 14.1 | 0.16 | 74 | 130 |
+| S4D-linear (1-scale init, trained at L=10000) | 1.13e+00 | 9.28e-01 | -0.09 | 9.6 | 14.1 | 0.16 | 74 | 130 |
+| S4D-linear (log init, LS-initialised readout) | 1.20e+00 | 9.19e-01 | -0.11 | 9.6 | 14.1 | 0.16 | 157 | 50 |
+| S4D-linear (log init, LS-init, per-alpha readout) | 6.72e-01 | 7.76e-01 | 0.12 | 9.6 | 14.1 | 0.16 | 125 | 50 |
+| SOE / Jiang (fixed exponents) | 1.14e+00 | 8.56e-01 | -0.15 | 9.6 | 14.1 | 0.16 | 126 | 50 |
+| SOE / Jiang (per-alpha readout) | 6.70e-01 | 8.18e-01 | 0.05 | 9.6 | 14.1 | 0.16 | 99 | 50 |
+| SOE / Jiang, train-horizon band | 9.66e-01 | 8.51e-01 | -0.02 | 9.6 | 14.1 | 0.16 | 139 | 50 |
+| SOE / Jiang (LS-initialised readout) | 1.20e+00 | 9.68e-01 | -0.07 | 9.6 | 14.1 | 0.16 | 126 | 50 |
+| SOE / Jiang (LS-init, per-alpha readout) | 7.11e-01 | 6.02e-01 | 0.13 | 9.6 | 14.1 | 0.16 | 95 | 50 |
 
 
 † ALiBi bias is built per block of 512 queries (`models.alibi_attention`), so memory is O(H·512·L). Compute is still O(L²): that part is the method's.
@@ -111,6 +111,24 @@
 | SOE / Jiang, train-horizon band | 1.14e-02 | 1.90e-02 | 1.53e-02 | 3.13e-02 | 8.44e-03 | 1.23e-02 | 7.20e-02 | 2.15e-02 |
 | SOE / Jiang (LS-initialised readout) | 9.82e-05 | 1.17e-04 | 1.20e-04 | 1.75e-04 | 7.22e-05 | 8.64e-05 | 3.21e-04 | 1.22e-04 |
 | SOE / Jiang (LS-init, per-alpha readout) | 2.58e-07 | 1.81e-07 | 1.72e-07 | 1.73e-07 | 2.54e-07 | 2.01e-07 | 1.59e-07 | 1.77e-07 |
+
+
+### Why LS initialisation works on Jiang nodes and not on the S4D band
+
+| pole set | poles | max abs c | cancellation | kernel err (fp64) | kernel err (fp32) |
+|---|---|---|---|---|---|
+| jiang_T100 -- Jiang rule for T=100 (soe_jiang*) | 64 | 2.73e+01 | 5.95e+01 | 4.50e-11 | 2.04e-09 |
+| jiang_T10 -- Jiang rule for T=10 (soe_jiang_trainband) | 64 | 2.27e+01 | 1.46e+01 | 2.23e-12 | 4.90e-09 |
+| s4d_log_init -- S4D log-spaced init band [0.1, 100] (s4d_lin_*) | 64 | 1.28e+07 | 7.34e+08 | 3.50e-04 | 5.88e-02 |
+
+
+The worst alpha of the eight is shown. `cancellation` is the sum of |term| over the modes divided by the kernel value they produce, i.e. how much they must cancel.
+
+| run | rates | val at LS start | val after 2000 steps | grad norm at LS start | max rate drift |
+|---|---|---|---|---|---|
+| S4D band, rates learnable (shipped) | learnable | 2.74e-02 | 1.25e+03 | 5.19e+05 | 0.06 decades |
+| S4D band, rates frozen | frozen | 2.74e-02 | 1.04e-02 | 5.19e+05 | 0.00 decades |
+| Jiang band (rates fixed by construction) | frozen | 1.71e-07 | 4.03e-04 | 9.67e-07 | 0.00 decades |
 
 
 ### Learned relaxation rates vs Jiang's nodes

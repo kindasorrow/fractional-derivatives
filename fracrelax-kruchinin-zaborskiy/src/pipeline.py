@@ -33,6 +33,7 @@ STAGES = [
     ("bench", ["-m", "src.bench"]),
     ("analyze", ["-m", "src.analyze"]),
     ("analyze_kernels", ["-m", "src.analyze_kernels"]),
+    ("lsinit_study", ["-m", "src.lsinit_study"]),
     ("figures", ["-m", "src.figures"]),
     ("report", ["-m", "src.report"]),
 ]

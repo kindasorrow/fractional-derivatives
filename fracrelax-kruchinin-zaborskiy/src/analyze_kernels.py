@@ -19,7 +19,7 @@ import os
 
 import numpy as np
 
-from .jsonio import dump_compact
+from .jsonio import dump_split, load_split
 from . import exact, jiang
 from .bands import jiang_nodes
 from .config import ALPHAS_TRAIN, LAM, L_LONG, N_STATES, RESULTS, TAU
@@ -52,8 +52,7 @@ def _kernel_errors(name, k, k_true, n_split=1000):
 
 def main():
     path = os.path.join(RESULTS, "analysis.json")
-    with open(path) as fh:
-        rep = json.load(fh)
+    rep = load_split(path)
     s_jiang_long = np.asarray(rep["jiang"]["long"]["s"])
 
     # ---- kernel reconstruction for the single-layer models ----------------
@@ -95,8 +94,9 @@ def main():
         for a in (0.2, 0.5, 0.9)}
 
 
-    with open(path, "w") as fh:
-        dump_compact(rep, fh)
+    nb, na = dump_split(rep, path)
+    print(f"wrote results/analysis.json ({nb/1024:.0f} kB) "
+          f"+ analysis_arrays.npz ({na/1024:.0f} kB)")
     print("wrote results/analysis.json (kernels + spectral added)")
 
 

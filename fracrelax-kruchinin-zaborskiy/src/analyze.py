@@ -24,7 +24,7 @@ import numpy as np
 import torch
 from scipy import stats
 
-from .jsonio import dump_compact
+from .jsonio import dump_split
 from .config import (ALPHAS_TRAIN, LAM, L_LONG, L_TRAIN, N_STATES, RESULTS,
                      TAU)
 from .bench import load_model
@@ -161,8 +161,9 @@ def main(names=None):
               f"per-decade {st.get('sig_per_decade', float('nan')):.1f}, "
               f"KS vs log-uniform {st.get('ks_vs_loguniform', float('nan')):.3f}")
 
-    with open(os.path.join(RESULTS, "analysis.json"), "w") as fh:
-        dump_compact(rep, fh)
+    nb, na = dump_split(rep, os.path.join(RESULTS, "analysis.json"))
+    print(f"wrote results/analysis.json ({nb/1024:.0f} kB) "
+          f"+ analysis_arrays.npz ({na/1024:.0f} kB)")
     print("wrote results/analysis.json "
           "(now run `python -m src.analyze_kernels` for the kernel section)")
 

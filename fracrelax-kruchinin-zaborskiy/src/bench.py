@@ -36,7 +36,7 @@ from .bands import SEEDED
 from .config import (ALPHAS_TRAIN, CKPT, LAM, L_LONG, L_SCALING, L_TRAIN,
                      N_STATES, RESULTS, SEED, SEEDS, TAU, tag)
 from .data import SeqData, path, rel_l2
-from .jsonio import dump_compact
+from .jsonio import dump_split, load_split
 from .registry import SPECS, build
 
 
@@ -270,8 +270,10 @@ def main():
     else:
         print("  (run `python -m src.bench_classical` for the CPU references)")
 
-    with open(os.path.join(RESULTS, "bench.json"), "w") as fh:
-        dump_compact(report, fh)
+    out = os.path.join(RESULTS, "bench.json")
+    nb, na = dump_split(report, out)
+    print(f"wrote results/bench.json ({nb/1024:.0f} kB) "
+          f"+ bench_arrays.npz ({na/1024:.0f} kB)")
     print("wrote results/bench.json")
 
 
