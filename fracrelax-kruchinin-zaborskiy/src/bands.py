@@ -29,7 +29,8 @@ ABLATIONS = ("transformer_nope", "transformer_alibi", "s4d_lin_log",
              "s4d_lin_linear", "s4d_lin_narrow", "s4d_lin_softplus",
              "s4d_lin_log_longtrain", "s4d_lin_narrow_longtrain",
              "soe_jiang_table", "soe_jiang_trainband",
-             "soe_jiang_lsinit", "s4d_lin_log_lsinit")
+             "soe_jiang_lsinit", "s4d_lin_log_lsinit",
+             "soe_jiang_lsinit_table", "s4d_lin_log_lsinit_table")
 
 
 def jiang_nodes(T: float, n_max: int = N_STATES, alpha_ref: float = ALPHA_REF):

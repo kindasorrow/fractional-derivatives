@@ -1,5 +1,6 @@
 {
   "name": "s4d_deep",
+  "tag": "s4d_deep",
   "label": "S4D (deep, 2 blocks)",
   "family": "s4d",
   "n_params": 68129,
@@ -9,8 +10,9 @@
   "lr_rate": 0.01,
   "wd": 0.0,
   "seed": 20261022,
-  "train_time_s": 434.94877552986145,
-  "train_peak_mem_MiB": 316.916015625,
+  "train_L": 1000,
+  "train_time_s": 376.6578552722931,
+  "train_peak_mem_MiB": 316.599609375,
   "best_step": 40000,
   "best_val_rel_l2_med": 0.0015065721236169338,
   "history": [

@@ -4,9 +4,9 @@ r"""Fast CPU self-checks for the code paths that are easy to get subtly wrong.
 
 1. every model is strictly causal (perturb the last input, earlier outputs fixed);
 2. chunked ALiBi attention == the full (1, H, L, L)-bias reference;
-3. the LS-initialised readout really starts at the least-squares solution:
-   output error vs the L1 solution is ~1e-5 or better, for the table readout
-   AND the alpha-MLP readout, at the training orders.
+3. the per-alpha table reproduces the least-squares initialisation accurately;
+   separately, the alpha-MLP diagnostic checks that representation error stays
+   within 2e-3 in float32. Passing the MLP check does not establish LS accuracy.
 """
 
 from __future__ import annotations
@@ -68,14 +68,26 @@ def check_lsinit():
                       for i, a in enumerate(ALPHAS_TRAIN)])
     alpha = torch.tensor(ALPHAS_TRAIN, dtype=torch.float32)
     aid = torch.arange(len(ALPHAS_TRAIN))
+    # Only the per-alpha table can hold the LS solution in float32.  The
+    # alpha-MLP cannot, and the bound below records that limit instead of
+    # hiding it: the embedding maps the 8 training orders to a basis with
+    # cond ~ 1.7e5, so an exact fit needs weights of O(1e3) to produce
+    # coefficients of O(10); the float32 round-trip then loses the small c_j
+    # (the readout spans ~6.5e4 in dynamic range).  In float64 the same fit is
+    # exact to 8e-14, so this is precision, not a wrong formula.  That is why
+    # the `*_lsinit_table` models exist -- see registry.
+    tol = {"table": 1e-5, "mlp": 2e-3}
     for readout in ("table", "mlp"):
         m = SOEFixed(s, TAU, readout=readout, n_alpha=len(ALPHAS_TRAIN))
         apply_ls_init(m, L_fit=10000)
         with torch.no_grad():
             yh = m(torch.as_tensor(f, dtype=torch.float32), alpha, aid).numpy()
         rel = np.linalg.norm(yh - y_ref, axis=1) / np.linalg.norm(y_ref, axis=1)
-        assert rel.max() < 1e-4, (readout, rel)
-        print(f"  LS init ({readout:5s}): rel L2 vs L1  max {rel.max():.1e}")
+        assert rel.max() < tol[readout], (readout, rel)
+        purpose = ("LS-init accuracy" if readout == "table" else
+                   "MLP representation diagnostic")
+        print(f"  {purpose} ({readout}): rel L2 vs L1 max {rel.max():.1e}"
+              f" (tolerance {tol[readout]:.0e})")
 
 
 if __name__ == "__main__":

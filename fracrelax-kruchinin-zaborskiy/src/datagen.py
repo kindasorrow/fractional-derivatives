@@ -95,7 +95,8 @@ def draw_forcing(n: int, L: int, tau: float, rng: np.random.Generator):
     for i in range(n):
         j = int(rng.integers(len(KINDS)))
         x = _draw_one(KINDS[j], L, tau, rng)
-        x = x - 0.0  # keep the mean: a DC component is physically meaningful
+        # scaled to unit RMS, NOT centred: a DC component is physically
+        # meaningful here (it is what excites the slow end of the kernel).
         f[i] = x / (np.sqrt(np.mean(x ** 2)) + 1e-12)
         kid[i] = j
     return f, kid

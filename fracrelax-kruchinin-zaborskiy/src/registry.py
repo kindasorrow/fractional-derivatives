@@ -8,7 +8,9 @@ soe_jiang            fixed exponents = Jiang nodes for the *deployment* horizon
 soe_jiang_trainband  the same, but the Jiang rule only knows the *training*
                      horizon T = L_TRAIN*tau -- ablation for the band prior.
 soe_jiang_lsinit     the same, with the readout initialised at the least-squares
-                     solution (tests whether the ~1e-3 floor is optimisation)
+                     solution (tests whether the ~1e-3 floor is optimisation);
+                     `*_lsinit_table` are the same with the per-alpha table
+                     readout, the only one that holds the LS solution in fp32
 soe_jiang_table      the same nodes with one free readout vector per training
                      alpha instead of an alpha-MLP (optimisation control).
 s4d_lin_*            single-layer linear SSM with learned rates, three
@@ -67,6 +69,25 @@ SPECS = {
                        dict(init="log", rate_param="log")),
         ls_init=L_TRAIN,
         label="S4D-linear (log init, LS-initialised readout)", steps=40000),
+
+    # The alpha-MLP readout cannot hold the LS solution in fp32: the embedding
+    # maps the 8 training orders to a basis with cond ~ 1.7e5, so an exact fit
+    # needs O(1e3) weights for O(10) coefficients and the fp32 round-trip loses
+    # the small c_j (src.selftest measures both).  These twins use the per-alpha
+    # table readout, where the LS start IS exact (~3e-7), so the question
+    # "is the 1e-3 floor an optimisation artefact?" gets an unobstructed answer.
+    # They cannot extrapolate to unseen alpha -- compare them with
+    # `soe_jiang_table`, the same architecture started from ~0.
+    "soe_jiang_lsinit_table": dict(
+        family="soe", build=lambda: _soe_table(T_LONG), ls_init=L_LONG,
+        label="SOE / Jiang (LS-init, per-alpha readout)", steps=40000),
+    "s4d_lin_log_lsinit_table": dict(
+        family="s4d_lin",
+        build=lambda: (S4DLinear(N_STATES, TAU, S_LO_TRAIN, S_HI, init="log",
+                                 readout="table", n_alpha=len(ALPHAS_TRAIN)),
+                       dict(init="log", rate_param="log", readout="table")),
+        ls_init=L_TRAIN,
+        label="S4D-linear (log init, LS-init, per-alpha readout)", steps=40000),
 
     # ---- learned rates, same architecture -------------------------------
     "s4d_lin_log": dict(

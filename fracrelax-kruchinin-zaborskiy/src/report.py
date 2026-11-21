@@ -8,16 +8,18 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 
 import numpy as np
 
 from .config import L_SCALING, L_TRAIN, RESULTS
+from .jsonio import load_split
 
 ORDER = ["transformer_rope", "transformer_nope", "transformer_alibi",
          "s4d_deep", "s4d_lin_log", "s4d_lin_linear", "s4d_lin_narrow",
          "s4d_lin_softplus", "s4d_lin_log_longtrain",
-         "s4d_lin_narrow_longtrain", "s4d_lin_log_lsinit", "soe_jiang",
-         "soe_jiang_table", "soe_jiang_trainband", "soe_jiang_lsinit"]
+         "s4d_lin_narrow_longtrain", "s4d_lin_log_lsinit", "s4d_lin_log_lsinit_table", "soe_jiang",
+         "soe_jiang_table", "soe_jiang_trainband", "soe_jiang_lsinit", "soe_jiang_lsinit_table"]
 
 # What each model is told about the TEST horizon (T = 100 s, L = 10^4), so the
 # accuracy table reads unambiguously.  "no" = it only ever saw / was built for
@@ -26,8 +28,10 @@ KNOWS_T100 = {
     "soe_jiang": "yes: nodes built for T=100",
     "soe_jiang_table": "yes: nodes built for T=100",
     "soe_jiang_lsinit": "yes: nodes + LS weights for T=100",
+    "soe_jiang_lsinit_table": "yes: nodes + LS weights for T=100",
     "soe_jiang_trainband": "no: nodes built for T=10",
     "s4d_lin_log_lsinit": "partly: LS weights fitted on L=1000 kernel",
+    "s4d_lin_log_lsinit_table": "partly: LS weights fitted on L=1000 kernel",
     "s4d_lin_log_longtrain": "yes: trained on L=10^4",
     "s4d_lin_narrow_longtrain": "yes: trained on L=10^4",
 }
@@ -41,10 +45,15 @@ L1_NOTE = ("> **Reference.** Every error below is relative to the **L1 solution*
            "statements about the equation, regenerate the data on a 10x finer grid "
            "and decimate.\n")
 
+UNSEEN_ALPHA_NOTE = ("> **Unseen α.** `*_table` models use one independent "
+                     "readout vector per training α and define no interpolation "
+                     "for unseen α. Their `unseen α` entries are `N/A` and are "
+                     "excluded from generalisation comparisons.\n")
+
 
 def _j(name):
     p = os.path.join(RESULTS, name)
-    return json.load(open(p)) if os.path.exists(p) else None
+    return load_split(p) if os.path.exists(p) else None
 
 
 def _fmt(x, nd=2):
@@ -90,10 +99,12 @@ def table_main(b):
         if len(runs) >= 2:
             cells = [_ms([r["med_by_L"].get(str(L)) for r in runs.values()])
                      for L in L_SCALING]
-            ho = _ms([r["heldout_all_med"] for r in runs.values()])
+            ho = ("N/A" if nm.endswith("_table") else
+                  _ms([r["heldout_all_med"] for r in runs.values()]))
         else:
             cells = [_fmt(acc.get(L)) for L in L_SCALING]
-            ho = _fmt(m.get("heldout_alpha", {}).get("all_med"))
+            ho = ("N/A" if nm.endswith("_table") else
+                  _fmt(m.get("heldout_alpha", {}).get("all_med")))
         rows.append([m["label"], KNOWS_T100.get(nm, KNOWS_DEFAULT),
                      f"{m['n_params']:,}", str(max(1, len(runs)))] + cells + [ho])
     ref = b.get("soe_ls")
@@ -206,6 +217,34 @@ def table_kernels(an):
     return (hdr, rows) if rows else (None, None)
 
 
+
+def table_lsinit(d):
+    """Why LS initialisation works on Jiang nodes and not on the S4D band."""
+    hdr = ["pole set", "poles", "max abs c", "cancellation", "kernel err (fp64)",
+           "kernel err (fp32)"]
+    rows = []
+    for key, b in d["static"].items():
+        r = max(b["per_alpha"], key=lambda r: r["c_abs_max"])
+        rows.append([f"{key} -- {b['note']}", str(b["n_exp"]),
+                     _fmt(r["c_abs_max"]), _fmt(r["cancellation"]),
+                     _fmt(r["kernel_rel_l2_fp64"]), _fmt(r["kernel_rel_l2_fp32"])])
+    return hdr, rows
+
+
+def table_lsinit_dynamic(d):
+    hdr = ["run", "rates", "val at LS start", "val after 2000 steps",
+           "grad norm at LS start", "max rate drift"]
+    rows = []
+    for rec in d["dynamic"]:
+        t = rec["trajectory"]
+        rows.append([rec["label"],
+                     "learnable" if rec["lr_rate"] > 0 else "frozen",
+                     _fmt(t[0]["val"]), _fmt(t[-1]["val"]),
+                     _fmt(rec["grad_norm_at_ls"]),
+                     f"{rec['rate_drift_max']:.2f} decades"])
+    return hdr, rows
+
+
 def md(hdr, rows):
     if hdr is None:
         return "_(not available)_\n"
@@ -219,6 +258,7 @@ def main():
     b, an = _j("bench.json"), _j("analysis.json")
     parts = []
     parts.append(L1_NOTE)
+    parts.append(UNSEEN_ALPHA_NOTE)
     if b:
         parts.append("### Accuracy vs sequence length "
                      f"(median relative $L_2$ vs the L1 solution; trained only at L={L_TRAIN})\n")
@@ -252,6 +292,33 @@ def main():
         parts.append(md(*table_classical(b)))
         parts.append("\n### Error at L=10000 by forcing family\n")
         parts.append(md(*table_kinds(b)))
+    ls = _j("lsinit_study.json")
+    if ls:
+        parts.append("\n### Why LS initialisation works on Jiang nodes and "
+                     "not on the S4D band\n")
+        parts.append(md(*table_lsinit(ls)))
+        parts.append("\nThe worst alpha of the eight is shown. `cancellation` "
+                     "is the sum of |term| over the modes divided by the "
+                     "kernel value they produce, i.e. how much they must "
+                     "cancel.\n")
+        parts.append(md(*table_lsinit_dynamic(ls)))
+        parts.append("\n**S4D LS-init is a negative result.** Its log-spaced pole "
+                     "basis makes the weighted LS fit numerically unstable: "
+                     "the largest coefficient is 1.28e+07, the worst cancellation "
+                     "factor is 7.34e+08, and kernel error rises from 3.50e-04 "
+                     "in float64 to 5.88e-02 in float32. The actual MLP-readout "
+                     "run starts with validation error 9.03e+01, reaches "
+                     "4.97e+04 by step 500 and 6.57e+05 by step 1000, and its "
+                     "best recorded validation error after 40,000 steps is "
+                     "4.47e+01. Its L=10000 test error, 1.21e+02, is far above "
+                     "the 5.48e-03 of S4D without LS-init. The 2,000-step "
+                     "rate-dynamics control uses a per-alpha table readout to "
+                     "isolate pole learning: its initial gradient norm is "
+                     "5.19e+05, and training with learnable rates raises "
+                     "validation error from "
+                     "2.74e-02 to 1.25e+03 while freezing rates ends at "
+                     "1.04e-02. These results do not support LS-init as an "
+                     "improvement for S4D.\n")
     if an:
         parts.append("\n### Learned relaxation rates vs Jiang's nodes\n")
         parts.append(md(*table_rates(an)))
@@ -259,9 +326,18 @@ def main():
                      "over the full 10^4 lags\n")
         parts.append(md(*table_kernels(an)))
     txt = "\n".join(parts)
-    with open(os.path.join(RESULTS, "tables.md"), "w", encoding="utf-8") as fh:
+    out = os.path.join(RESULTS, "tables.md")
+    with open(out, "w", encoding="utf-8") as fh:
         fh.write(txt)
-    print(txt)
+    # The tables carry non-ASCII (superscripts, +/-), and a Windows console --
+    # or the pipe `src.pipeline` hands this stage -- is cp1251 here, not UTF-8.
+    # The file above is the deliverable; never let echoing it fail the stage.
+    try:
+        print(txt)
+    except UnicodeEncodeError:
+        sys.stdout.reconfigure(errors="replace")
+        print(txt)
+    print(f"\nwrote {out}")
 
 
 if __name__ == "__main__":

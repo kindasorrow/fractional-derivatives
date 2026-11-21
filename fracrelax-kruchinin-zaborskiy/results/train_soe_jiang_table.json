@@ -1,5 +1,6 @@
 {
   "name": "soe_jiang_table",
+  "tag": "soe_jiang_table",
   "label": "SOE / Jiang (per-alpha readout)",
   "family": "soe",
   "n_params": 512,
@@ -9,7 +10,8 @@
   "lr_rate": 0.01,
   "wd": 0.0,
   "seed": 20261022,
-  "train_time_s": 112.00921535491943,
+  "train_L": 1000,
+  "train_time_s": 98.74442434310913,
   "train_peak_mem_MiB": 49.50537109375,
   "best_step": 38500,
   "best_val_rel_l2_med": 0.0007214193465188146,
